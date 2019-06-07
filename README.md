@@ -28,5 +28,5 @@ missing or could be improved.
 ## Research Papers
 
 
-[Nielsen Chuang book] https://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
-[Kitaev Shen Vyalyi book] https://www.ams.org/books/gsm/047/
+[Nielsen Chuang book]: https://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
+[Kitaev Shen Vyalyi book]: https://www.ams.org/books/gsm/047/
