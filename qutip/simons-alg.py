@@ -4,10 +4,19 @@
 # Last Updated: 08/22/2019
 
 from qutip import *
-from intro import foldl
 import operator
 
 # TODO Migrate utility functions to a seperate file/folder
+# TODO Supress warnings about imaginary numbers
+
+# An implementation of foldl (I think)
+# In: func, the function to apply; xs, the list to fold
+# Out: The result of folding the list with the specified function
+def foldl(func, xs):
+    ret = xs[0]
+    for i in range(1,len(xs)):
+        ret = func(ret, xs[i])
+    return ret
 
 # Converts integer to its k-bitstring representation
 # In: x, an integer; k, the length of the bitstring
@@ -113,4 +122,4 @@ Ua1 = Qobj(
 #print("Generated operator")
 #print(Ua1.data)
 
-#SimonsAlg(2,U1)
+SimonsAlg(2,U1)
