@@ -484,27 +484,28 @@ def rand_cong(A, Ops, num_gen=-1): # {{{
   return cong_gen(G, Ops)
 #----------------------------------------------------------------------------}}}
 
-def m(x,y):
-  z = [-1]*len(x)
-  for i in range(len(x)):
-    z[i] = x[i]*y[i]
-  return z
-
-M = Operation(m, 2, "m")
-
-A = FancySet( initial=[list(a) for a in list(product([0,1],repeat=3))] )
-C = rand_cong(A, [M], 1)
+#Example:
+#def m(x,y):
+#  z = [-1]*len(x)
+#  for i in range(len(x)):
+#    z[i] = x[i]*y[i]
+#  return z
+#
+#M = Operation(m, 2, "m")
+#
+#A = FancySet( initial=[list(a) for a in list(product([0,1],repeat=3))] )
 #G = [ [[1,1,1], [1,0,1]] ] + [ [a]*2 for a in A ]
 #C = cong_gen(G, [M])
-
-found = []
-for a in A:
-  if a in found:
-    continue
-  for b in A:
-    if b in found:
-      continue
-    if [a,b] in C:
-      found.append(b)
-      stdout.write(str(b) + " ")
-  stdout.write("\n")
+#D = rand_cong(A, [M], 1)
+#
+#found = []
+#for a in A:
+#  if a in found:
+#    continue
+#  for b in A:
+#    if b in found:
+#      continue
+#    if [a,b] in D:
+#      found.append(b)
+#      stdout.write(str(b) + " ")
+#  stdout.write("\n")
