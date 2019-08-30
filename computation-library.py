@@ -1,6 +1,5 @@
 # Version: 2018-11-03
 # imports {{{1
-from __future__ import division
 from copy import copy, deepcopy
 from IPython import embed
 from multiprocessing import Pool
@@ -86,9 +85,6 @@ class FancySet: # {{{1
     for k in self.elements:
       yield self.elements[k][0]
   #--------------------------------------------------------------------------}}}
-  def __getitem__(self, index):  # {{{
-    return self.elements[index][0]
-  #--------------------------------------------------------------------------}}}
   def __len__(self):  # {{{
     return len(self.elements)
   #--------------------------------------------------------------------------}}}
@@ -167,7 +163,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def contains(self, value, full=False): # {{{
     if not full:
-      keys = xrange(len(self))
+      keys = range(len(self))
     else:
       keys = self.store.keys()
 
@@ -183,7 +179,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def iter(self, full=False): # {{{
     if not full:
-      for i in xrange(self.len()): yield self[i]
+      for i in range(self.len()): yield self[i]
     else:
       for key in self.keys(): yield (key, self.store[key])
   #==========================================================================}}}
@@ -216,7 +212,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def __str__(self): # {{{
     s = "["
-    for i in xrange(len(self)-1): s += str(self[i]) + ", "
+    for i in range(len(self)-1): s += str(self[i]) + ", "
     return s + str(self[-1]) + "]"
   #==========================================================================}}}
 
