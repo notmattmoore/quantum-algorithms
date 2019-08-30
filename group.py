@@ -119,11 +119,11 @@ class Group(): #{{{
 # Creates a passable group function
 # In:   G, a group
 # Out:  a callable function that performs an embedded group's operation
-def grp_op(G):
+def grp_op(G): #{{{
     def op(x,y):
         return G.op(x,y)
     return op
-
+# ----------------------------------------------------------------------------}}}
 # Generates a proper group from generating elements
 # In:   G, a group; gens, the generating elements
 # Out:  a FancySet of elements in the subgroup
@@ -189,7 +189,6 @@ def rand_subgroup(G, num_gens=-1):
     return S
 # ----------------------------------------------------------------------------}}}
 # =============================== Tests =========================================
-
 def test_rand_subgroups(iterations=1000, digits=5): #{{{
     iters = iterations
     digs = digits
@@ -221,7 +220,6 @@ def test_rand_subgroups(iterations=1000, digits=5): #{{{
             print('================ FAILURE ===============')
             return
 # ----------------------------------------------------------------------------}}}
-
 if __name__ == '__main__': #{{{
     g = Group(
             k=3,
