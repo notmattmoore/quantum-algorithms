@@ -1,4 +1,6 @@
-# Version: 2018-11-03
+# Version: 2019-09-02
+# A library for doing computations on universal algebras
+
 # imports {{{1
 from copy import copy, deepcopy
 from IPython import embed
