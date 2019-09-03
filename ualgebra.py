@@ -1,10 +1,12 @@
-# Version: 2018-11-03
+# Version: 2019-09-02
+# A library for doing computations on universal algebras
+
 # imports {{{1
-from __future__ import division
-from copy import deepcopy
+from copy import copy, deepcopy
 from IPython import embed
 from multiprocessing import Pool
 from itertools import *
+from random import choice, randrange
 from sys import *
 import cProfile, pickle, random, shelve, string
 #---------------------------------------------------------------------------}}}1
@@ -37,6 +39,7 @@ class FancySet: # {{{1
   # FS.__iter__(...) is called for 'iter(FS)' or implict things involving loops,
   #   etc. This gives the actual element values, not the strings which index
   #   them.
+  # FS.__getitem__(...) is called for FS[...]. It returns the element.
   # FS.__len__(...) is called for 'len(FS)'.
   # FS.__str__(...) is called for 'str(FS)'.
 
@@ -122,7 +125,7 @@ class ishelf(object):  # {{{1
 #   string keys.
 # IS.__contains__(value) is called for 'x in IS'. Only works for indexed values.
 # IS.__iter__() is called for 'iter(IS)'. Iterates only over indexed values.
-# IS.__str__() is called for 'str(IS)' and for 'print IS'. Only shows indexed
+# IS.__str__() is called for 'str(IS)' and for 'print(IS)'. Only shows indexed
 #   values.
 #
 # IS.close() close the file
@@ -162,7 +165,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def contains(self, value, full=False): # {{{
     if not full:
-      keys = xrange(len(self))
+      keys = range(len(self))
     else:
       keys = self.store.keys()
 
@@ -178,7 +181,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def iter(self, full=False): # {{{
     if not full:
-      for i in xrange(self.len()): yield self[i]
+      for i in range(self.len()): yield self[i]
     else:
       for key in self.keys(): yield (key, self.store[key])
   #==========================================================================}}}
@@ -211,7 +214,7 @@ class ishelf(object):  # {{{1
   #==========================================================================}}}
   def __str__(self): # {{{
     s = "["
-    for i in xrange(len(self)-1): s += str(self[i]) + ", "
+    for i in range(len(self)-1): s += str(self[i]) + ", "
     return s + str(self[-1]) + "]"
   #==========================================================================}}}
 
@@ -320,13 +323,13 @@ def powerset_as_indicators(size): # {{{
   I = [0]*size
   T = [1]*size
   while I != T:
-    yield I
+    yield copy(I)
     index = 0
     while I[index] == 1:
       I[index] = 0
       index += 1
     I[index] = 1
-  yield I
+  yield copy(I)
 #----------------------------------------------------------------------------}}}
 def single_closure(G_old, G_new, Ops, Progress=True, Search=None):  # {{{
   # G_old is a set of elements. G_new has been computed by taking G_old and
@@ -363,7 +366,7 @@ def single_closure(G_old, G_new, Ops, Progress=True, Search=None):  # {{{
           if Search != None and Search(result):
             stdout.write( "\nFound:\n" + op.pprint(*args) + "\n" )
         args_count += 1
-        if Progress and args_count % 100000 == 0:
+        if Progress and args_count % 10000 == 0:
           stdout.write( "\roperation " + op.name \
               + " " + str(op_count+1) + " / " + str(op_total) \
               + ", argument " + str(args_count) + " / " + str(args_total) \
@@ -374,7 +377,7 @@ def single_closure(G_old, G_new, Ops, Progress=True, Search=None):  # {{{
     stdout.write("  done.\n")
   return G_newer
 #----------------------------------------------------------------------------}}}
-def subalg_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
+def subalg_gen(Generators, Ops, Progress=True, Search=None, ExtraClosure=None, SavePartial=None, MaxLevels=-1):  # {{{
   G_old = FancySet()
   G_new = FancySet(initial=Generators)
   closure_level = 0
@@ -389,6 +392,12 @@ def subalg_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, Ma
       stdout.write( "at " + str(len(G_old) + len(G_new)) + " elements:\n" )
       stdout.flush()
     G_newer = single_closure(G_old, G_new, Ops, Progress=Progress, Search=Search)
+    if ExtraClosure != None:
+      G_extra = ExtraClosure(G_old, G_new, Ops, Search=Search)
+      if Progress:
+        stdout.write( "Extra closure found " + str(len(G_extra)) )
+        stdout.write( " new elements.\n" )
+      G_newer.update(G_extra)
     G_old.update(G_new)
     G_new = G_newer
     if SavePartial != None:
@@ -418,3 +427,101 @@ def subalg_gen_layers(Generators, Ops, Progress=False):  # {{{
     G_old.update(G_new)
     G_new = G_newer
 #----------------------------------------------------------------------------}}}
+
+def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
+  # C and C_new are sets of elements, with C_new disjoint from C. A is the
+  # underlying algebra. C is assumed to be transitively closed. Returns a set
+  # C_newer of elements that are not in C u C_newer but are in the transitive
+  # closure. 
+
+  C_newer = FancySet()
+
+  # C is transitive, so we don't need to check C x C. We do need to check
+  # combinations of C x C_new and C_new x C_new. Note that the transitive
+  # via C x C_new produces the same as via C_new x C. The outer loop controls
+  # which of these combinations we're looking at.
+  for [comb1, comb2] in [ (0,1), (1,1) ]:
+    C_comb1 = [C, C_new][comb1]
+    C_comb2 = [C, C_new][comb2]
+    for [a,b], c in product(C_comb1, A):
+      if [b,c] in C_comb2 and not ([a,c] in C or [a,c] in C_new or [a,c] in C_newer):
+        why = "TransitiveClosure( " + str([a,b]) + ", " + str([b,c]) + " ) = " + str([a,c])
+        C_newer.add([a,c], why)
+        if Search != None and Search([a,c]):
+          stdout.write( "\nFound:\n" + why + "\n" )
+  return C_newer
+#----------------------------------------------------------------------------}}}
+def cong_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
+
+  A = FancySet()
+  GeneratorsCong = FancySet( initial=Generators )
+
+  # Make sure that Generators contains the diagonal and is symmetric
+  for [a,b] in Generators:
+    GeneratorsCong.add([b,a])
+    GeneratorsCong.add([a,a])
+    GeneratorsCong.add([b,b])
+    A.add(a)
+    A.add(b)
+
+  # subalg_gen expects the ExtraClosure function to take certain arguments, so
+  # we make the function we want to send it look like that
+  def transitive_closure_wrapper(C, C_new, Ops, A=A, Search=Search):
+    return transitive_closure_layer(C, C_new, A, Search=Search)
+
+  return subalg_gen(GeneratorsCong, Ops, Progress=Progress, Search=Search, \
+      ExtraClosure=transitive_closure_wrapper, SavePartial=SavePartial, \
+      MaxLevels=MaxLevels)
+#----------------------------------------------------------------------------}}}
+def rand_cong(A, Ops, num_gen=-1, Progress=True): # {{{
+  if num_gen == -1:
+    num_gen = randrange(1,len(A)+1)
+
+  G = [ [a,a] for a in A ]
+  A_list = list(A)
+  for _ in range(num_gen):
+    a = choice(A_list)
+    b = choice(A_list)
+    G.append([a,b])
+  return cong_gen(G, Ops, Progress=Progress)
+#----------------------------------------------------------------------------}}}
+def cong_classes(C, A): # {{{
+  # output the congruence classes of C
+  found = FancySet()
+  classes = []
+  for a in A:
+    if a not in found:
+      classes.append([])
+      for b in A:
+        if [a,b] in C:
+          found.add(b)
+          classes[-1].append(b)
+  return classes
+#----------------------------------------------------------------------------}}}
+
+
+#Example:
+#def m(x,y):
+#  z = [-1]*len(x)
+#  for i in range(len(x)):
+#    z[i] = x[i]*y[i]
+#  return z
+#
+#M = Operation(m, 2, "m")
+#
+#A = FancySet( initial=[list(a) for a in list(product([0,1],repeat=3))] )
+#G = [ [[1,1,1], [1,0,1]] ] + [ [a]*2 for a in A ]
+#C = cong_gen(G, [M])
+#D = rand_cong(A, [M], 1)
+#
+#found = []
+#for a in A:
+#  if a in found:
+#    continue
+#  for b in A:
+#    if b in found:
+#      continue
+#    if [a,b] in D:
+#      found.append(b)
+#      stdout.write(str(b) + " ")
+#  stdout.write("\n")

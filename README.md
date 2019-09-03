@@ -8,6 +8,10 @@ missing or could be improved.
 
 ## Useful Links
 
+* The mailing list: https://mail.ittc.ku.edu/mailman/listinfo/aleph
+
+* The Slack channel: https://kuittc.slack.com/#quantum
+
 
 ## Software
 
