@@ -27,3 +27,10 @@ print("a b S | a Theta b?")
 for a,b in combinations(A,2):
   S = simon_sum(Theta, a, b)
   print(a, b, S, "|", [a,b] in Theta)
+
+print("")
+
+print('Simons over second register')
+for i,C in enumerate(UA.cong_classes(Theta, A)):
+    print('t | size of congruence')
+    print(i, len(C))
