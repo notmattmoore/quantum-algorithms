@@ -123,33 +123,18 @@ for C in UA.cong_classes(Theta, A):
   print(C)
 
 Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[ [2**n,2**n] for _ in range(2) ] )
-for row in Phi.full():
-    print(row)
 
 meet_structure = [ [ meet(x,y) for y in A ] for x in A ]
 size= 2**(3*n)
-ex_gen_struct = gen_oracle_op(n, meet_structure[0], arity=3, mult=1)
-for row in ex_gen_struct:
-    print(row)
-ex_Meet = Qobj(
-            inpt=ex_gen_struct,
-            dims=[ [size,size],[size,size] ]
-        )
-print(ex_Meet.data)
-print(ex_Meet.data)
-for row in ex_Meet.full():
-    print(row)
-
 Meets = [
             Qobj(
-                inpt=gen_oracle_op(3*n, meet_structure[i], size=2**(3*n), mult=i+1), # 3*n because 3-arity for reversible meet
-                dims=[ [2**(3*n),2**(3*n)] for _ in range(2) ])
+                inpt=gen_oracle_op(n, meet_structure[i], arity=3, mult=i+1),
+                dims=[ [size,size] for _ in range(2) ])
             for i in range(len(meet_structure)) ]
 Meet = foldl(operator.add, Meets)
 
 print(Meet.data)
-for row in Meet.full():
-    print(row)
-
+#for row in Meet.full():
+#    print(row)
 
 SemilatAlg(n,Phi)
