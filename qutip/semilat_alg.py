@@ -30,7 +30,7 @@ def bin_to_int(x):
     ret = 0
     lenx = len(x)
     for i in range(lenx):
-        ret += x[i]*2^(lenx-1-i)
+        ret += x[i]*(2**(lenx-1-i))
     return ret
 
 # Generates list of binary strings, as specified
@@ -79,29 +79,66 @@ def gen_cong_op(k, A, cong):
                 ret[index] = ket.full().astype(int).flatten().tolist()
     return ret
 
+def gen_meet_op(n, A):
+    meet_structure = [ [ meet(x,y) for y in A ] for x in A ]
+    Meets = [
+                Qobj(
+                    inpt=gen_oracle_op(n, meet_structure[i], arity=3, mult=i+1),
+                    dims=[ [ 2**n for _ in range(3) ] for _ in range(2) ])
+                for i in range(len(meet_structure)) ]
+    return foldl(operator.add, Meets)
+
 # TODO Implement meet operator
 # Simulates Simon's Algorithm
 # In: k, order (?) of group k; P, an oracle operator encoding the homomorphism phi
 # Out: TBD
-def SemilatAlg(k,P):
+def SemilatAlg(n,P,A):
     # Prepare the state psi
-    G = [ basis(2**k, i) for i in range(2**k) ]
-    psi = 2**(-k/2)*foldl(operator.add, G)
+    G = [ basis(2**n, i) for i in range(2**n) ]
+    psi = 2**(-n/2)*foldl(operator.add, G)
+    print('~~~~~~~~ psi ~~~~~~~~')
+    print(psi)
 
     # Prepare both registers
-    regs = tensor(psi, basis(2**k,0))
+    regs = tensor(psi, basis(2**n,0))
 
-    # Apply U (after creating U)
-    #print(U.data)
-    #print(regs.data)
-
-    #print(U.dims, U.shape, U.isherm)
-    #print(regs.dims, regs.shape, regs.type)
-
+    #print('~~~~~~~~ P ~~~~~~~~')
+    #print(P)
+    #print('~~~~~~~~ regs ~~~~~~~~')
+    #print(regs)
     post_phi = P * regs
-    print(post_phi.data)
+    #print('~~~~~~~~ post_phi ~~~~~~~~')
+    #print(post_phi)
+
+    # "discard" register 1
+    #post_phi2 = post_phi.ptrace(1)
+    #print('~~~~~~~~ post_phi2 ~~~~~~~~')
+    #print(post_phi2)
+
+    # augment state with |0>
+    prep_meet = tensor( post_phi, basis(2**n, 0) )
+    #prep_meet = tensor( post_phi2, psi, basis(2**n, 0) )
 
     # Apply meet operator
+    M = gen_meet_op(n, A)
+    # Meet acts on registers 1-3, so I prevents action on register 0
+    #M_full = tensor(qeye(n),M)
+    #print('~~~~~~~~ M ~~~~~~~~')
+    #print(M)
+    #print('~~~~~~~~ M_full ~~~~~~~~')
+    #print(M_full)
+    #print('~~~~~~~~ prep_meet ~~~~~~~~')
+    #print(prep_meet)
+    post_meet = M * prep_meet
+    #print('~~~~~~~~ post_meet ~~~~~~~~')
+    #print(post_meet)
+    #print(post_meet.ptrace(0))
+
+    #dm = post_meet * post_meet.dag()
+    print('~~~~~~~~ dm final register partial ~~~~~~~~')
+    print(dm.ptrace(2))
+
+
 
 # ~~~ Testing ~~~
 
@@ -124,17 +161,4 @@ for C in UA.cong_classes(Theta, A):
 
 Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[ [2**n,2**n] for _ in range(2) ] )
 
-meet_structure = [ [ meet(x,y) for y in A ] for x in A ]
-size= 2**(3*n)
-Meets = [
-            Qobj(
-                inpt=gen_oracle_op(n, meet_structure[i], arity=3, mult=i+1),
-                dims=[ [size,size] for _ in range(2) ])
-            for i in range(len(meet_structure)) ]
-Meet = foldl(operator.add, Meets)
-
-print(Meet.data)
-#for row in Meet.full():
-#    print(row)
-
-SemilatAlg(n,Phi)
+SemilatAlg(n,Phi,A)
