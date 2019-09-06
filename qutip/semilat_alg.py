@@ -102,6 +102,7 @@ def gen_meet_op(n, A):
 # In: k, order (?) of group k; P, an oracle operator encoding the homomorphism phi
 # Out: TBD
 def SemilatAlg(n,P,A):
+    M = gen_meet_op(n, A)
     # Prepare the state psi
     # NOTE Tensoring a bunch of small basis vectors may seem silly
     # considering other options. However, this properly builds up
@@ -118,22 +119,53 @@ def SemilatAlg(n,P,A):
     post_phi = P * regs
 
     # "discard" register 1
-    phi_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
+    print('~'*10,'Experimenting with partial trace on output of Phi','~'*10)
+    #phi_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
 
-    M = gen_meet_op(n, A)
+    #phi_res_transform = ht * phi_res
+    #print('~'*10,'phi_res_transform','~'*10)
+    #print(phi_res_transform)
 
-    # Experimental output
-    outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in phi_res.full() ]
-    dm = foldl(operator.add, outs)
-    dm_last = dm.ptrace([ 3*n-i for i in range(n,0,-1) ])
+    post_phi_transform = tensor(ht, identity([2 for _ in range(n)])) * post_phi
+    post_transform_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
+    print('~'*10,'post_transform_res','~'*10)
+    print(post_transform_res)
+
+    # Experimental stuff
+    #outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in phi_res.full() ]
+    #dm = foldl(operator.add, outs)
+    #dm_last = dm.ptrace([ 3*n-i for i in range(n,0,-1) ])
 
     # Apply Hadamard gate
-    yld = dm_last * ht
-    print('~~~~~~~~ yld ~~~~~~~~')
-    print(yld)
-    print(yld.data)
-    # see what we get from applying to a basis vector
-    print(yld*zn)
+    #yld = dm_last * ht
+    #print('~~~~~~~~ yld ~~~~~~~~')
+    #print(yld)
+    #print('~~~~~~~~ yld*zn ~~~~~~~~')
+    #print(yld*zn)
+
+    print('~'*10,'Experimenting with I_n tensor M','~'*10)
+
+    # augment M
+    M_aug = tensor( identity([2 for _ in range(n)]), M)
+
+    # prep full register
+    full_reg = tensor( post_phi, psi, zn ) # 2n x n x n
+
+    # Apply M_aug
+    full_res = M_aug * full_reg
+
+    print('~'*10, 'full_res', '~'*10)
+    print(full_res.data)
+
+    # Restrict the space to area of interest
+    interest = full_res.ptrace( [4*n - i for i in range(n,0,-1)] )
+    print('~'*10, 'interest', '~'*10)
+    print(interest)
+
+    # Apply Hadamard gates
+    interest_transform = ht * interest
+    print('~'*10, 'interest_transform', '~'*10)
+    print(interest_transform.data)
 
 # ~~~ Testing ~~~
 
