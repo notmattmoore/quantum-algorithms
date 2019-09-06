@@ -103,57 +103,31 @@ def gen_meet_op(n, A):
 # Out: TBD
 def SemilatAlg(n,P,A):
     # Prepare the state psi
+    # NOTE Tensoring a bunch of small basis vectors may seem silly
+    # considering other options. However, this properly builds up
+    # the tensor structure. This quality is extremely useful when working
+    # with larger versions of built in operators (i.e. H^n)
     zn = tensor([ basis(2, 0) for _ in range(n) ])
     ht = hadamard_transform(n)
-    print('~~~~~~~~ zn ~~~~~~~~')
-    print(zn)
-    print('~~~~~~~~ ht ~~~~~~~~')
-    print(ht)
     psi = ht * zn
-    print('~~~~~~~~ psi ~~~~~~~~')
-    print(psi)
 
-    # Prepare both registers
+    # Prepare input registers for Phi
     regs = tensor(psi, zn)
 
-    print('~~~~~~~~ P ~~~~~~~~')
-    print(P)
-    print('~~~~~~~~ regs ~~~~~~~~')
-    print(regs)
+    # Apply Phi
     post_phi = P * regs
-    print('~~~~~~~~ post_phi ~~~~~~~~')
-    print(post_phi)
 
     # "discard" register 1
-    post_phi2 = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
-    print('~~~~~~~~ post_phi2 ~~~~~~~~')
-    print(post_phi2)
+    phi_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
 
-    # augment state with |0>
-    #prep_meet = tensor( post_phi, basis(2**n, 0) )
     M = gen_meet_op(n, A)
-    print('~~~~~~~~ M ~~~~~~~~')
-    print(M)
-    row_ex = tensor( Qobj(inpt=post_phi2.full()[4], dims=[[2]*n,[1]*n] ),
-            psi, zn )
-    print('~~~~~~~~ Example row ~~~~~~~~')
-    print(row_ex)
-    outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in post_phi2.full() ]
+
+    # Experimental output
+    outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in phi_res.full() ]
     dm = foldl(operator.add, outs)
     dm_last = dm.ptrace([ 3*n-i for i in range(n,0,-1) ])
 
-    #print('~~~~~~~~ prep_meet ~~~~~~~~')
-    #print(prep_meet)
-    #post_meet = M * prep_meet
-    #print('~~~~~~~~ post_meet ~~~~~~~~')
-    #print(post_meet)
-    #print(post_meet.ptrace(0))
-
     # Apply Hadamard gate
-    print('~~~~~~~~ dm_last ~~~~~~~~')
-    print(dm_last)
-    print('~~~~~~~~ ht ~~~~~~~~')
-    print(ht)
     yld = dm_last * ht
     print('~~~~~~~~ yld ~~~~~~~~')
     print(yld)
