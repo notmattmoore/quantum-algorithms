@@ -24,7 +24,8 @@ def foldl(func, xs):
 # Out: x as a k-bitstring
 def int_to_bin(x, k):
     num = '{0:b}'.format(x)
-    return '0'*(k-len(num))+num
+    s = '0'*(k-len(num))+num
+    return [ int(d) for d in s ]
 
 def bin_to_int(x):
     ret = 0
@@ -60,9 +61,13 @@ def gen_oracle_op(k, f, arity=0, mult=1):
         index = mult*(mult-1)
         for offset in range(len(f)):
             fx = bin_to_int(f[x])
-            ket = tensor(   basis(2**k, mult-1),
-                            basis(2**k, fx),
-                            basis(2**k, (fx+offset) % 2**k) )
+            mult_ket = tensor([ basis(2, 1) if d == 1
+                                else basis(2, 0) for d in int_to_bin(mult-1, k) ])
+            fx_ket = tensor([ basis(2, 1) if d == 1 else basis(2, 0) for d in f[x] ])
+            offset_ket = tensor([ basis(2, 1) if d == 1
+                                else basis(2, 0) for d
+                                in int_to_bin((fx+offset)%2**k, k) ])
+            ket = tensor(   mult_ket, fx_ket, offset_ket )
             # append just the array underlying the tensor
             ret[index+offset] = ket.full().astype(int).flatten().tolist()
     return ret
@@ -74,7 +79,11 @@ def gen_cong_op(k, A, cong):
         for x in C:
             xb = bin_to_int(x)
             for offset in range(2**k):
-                ket = tensor( basis(2**k, xb), basis(2**k, (i+offset) % 2**k ))
+                xb_ket = tensor([ basis(2, 1) if d == 1 else basis(2, 0) for d in x ])
+                offset_ket = tensor([ basis(2,1)
+                                        if d == 1
+                                        else basis(2,0) for d in int_to_bin((i+offset)%2**k, k) ])
+                ket = tensor( xb_ket, offset_ket)
                 index = 2**k*xb+offset
                 ret[index] = ket.full().astype(int).flatten().tolist()
     return ret
@@ -84,7 +93,7 @@ def gen_meet_op(n, A):
     Meets = [
                 Qobj(
                     inpt=gen_oracle_op(n, meet_structure[i], arity=3, mult=i+1),
-                    dims=[ [ 2**n for _ in range(3) ] for _ in range(2) ])
+                    dims=[[2]*3*n for _ in range(2) ])
                 for i in range(len(meet_structure)) ]
     return foldl(operator.add, Meets)
 
@@ -94,51 +103,63 @@ def gen_meet_op(n, A):
 # Out: TBD
 def SemilatAlg(n,P,A):
     # Prepare the state psi
-    G = [ basis(2**n, i) for i in range(2**n) ]
-    psi = 2**(-n/2)*foldl(operator.add, G)
+    zn = tensor([ basis(2, 0) for _ in range(n) ])
+    ht = hadamard_transform(n)
+    print('~~~~~~~~ zn ~~~~~~~~')
+    print(zn)
+    print('~~~~~~~~ ht ~~~~~~~~')
+    print(ht)
+    psi = ht * zn
     print('~~~~~~~~ psi ~~~~~~~~')
     print(psi)
 
     # Prepare both registers
-    regs = tensor(psi, basis(2**n,0))
+    regs = tensor(psi, zn)
 
-    #print('~~~~~~~~ P ~~~~~~~~')
-    #print(P)
-    #print('~~~~~~~~ regs ~~~~~~~~')
-    #print(regs)
+    print('~~~~~~~~ P ~~~~~~~~')
+    print(P)
+    print('~~~~~~~~ regs ~~~~~~~~')
+    print(regs)
     post_phi = P * regs
-    #print('~~~~~~~~ post_phi ~~~~~~~~')
-    #print(post_phi)
+    print('~~~~~~~~ post_phi ~~~~~~~~')
+    print(post_phi)
 
     # "discard" register 1
-    #post_phi2 = post_phi.ptrace(1)
-    #print('~~~~~~~~ post_phi2 ~~~~~~~~')
-    #print(post_phi2)
+    post_phi2 = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
+    print('~~~~~~~~ post_phi2 ~~~~~~~~')
+    print(post_phi2)
 
     # augment state with |0>
-    prep_meet = tensor( post_phi, basis(2**n, 0) )
-    #prep_meet = tensor( post_phi2, psi, basis(2**n, 0) )
-
-    # Apply meet operator
+    #prep_meet = tensor( post_phi, basis(2**n, 0) )
     M = gen_meet_op(n, A)
-    # Meet acts on registers 1-3, so I prevents action on register 0
-    #M_full = tensor(qeye(n),M)
-    #print('~~~~~~~~ M ~~~~~~~~')
-    #print(M)
-    #print('~~~~~~~~ M_full ~~~~~~~~')
-    #print(M_full)
+    print('~~~~~~~~ M ~~~~~~~~')
+    print(M)
+    row_ex = tensor( Qobj(inpt=post_phi2.full()[4], dims=[[2]*n,[1]*n] ),
+            psi, zn )
+    print('~~~~~~~~ Example row ~~~~~~~~')
+    print(row_ex)
+    outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in post_phi2.full() ]
+    dm = foldl(operator.add, outs)
+    dm_last = dm.ptrace([ 3*n-i for i in range(n,0,-1) ])
+
     #print('~~~~~~~~ prep_meet ~~~~~~~~')
     #print(prep_meet)
-    post_meet = M * prep_meet
+    #post_meet = M * prep_meet
     #print('~~~~~~~~ post_meet ~~~~~~~~')
     #print(post_meet)
     #print(post_meet.ptrace(0))
 
-    #dm = post_meet * post_meet.dag()
-    print('~~~~~~~~ dm final register partial ~~~~~~~~')
-    print(dm.ptrace(2))
-
-
+    # Apply Hadamard gate
+    print('~~~~~~~~ dm_last ~~~~~~~~')
+    print(dm_last)
+    print('~~~~~~~~ ht ~~~~~~~~')
+    print(ht)
+    yld = dm_last * ht
+    print('~~~~~~~~ yld ~~~~~~~~')
+    print(yld)
+    print(yld.data)
+    # see what we get from applying to a basis vector
+    print(yld*zn)
 
 # ~~~ Testing ~~~
 
@@ -159,6 +180,6 @@ print("Theta has classes:")
 for C in UA.cong_classes(Theta, A):
   print(C)
 
-Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[ [2**n,2**n] for _ in range(2) ] )
+Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[[2]*2*n, [2]*2*n] )
 
 SemilatAlg(n,Phi,A)
