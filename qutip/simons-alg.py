@@ -1,6 +1,5 @@
 # Rough implementation of Simon's Algorithm using QuTiP
 # Created by: Taylor Walenczyk
-# Date Created: 08/13/2019
 # Last Updated: 08/22/2019
 
 from qutip import *
