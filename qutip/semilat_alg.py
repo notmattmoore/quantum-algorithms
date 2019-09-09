@@ -6,21 +6,19 @@ from utils import *
 import operator
 import ualgebra as UA
 
-# TODO Migrate utility functions to a seperate file/folder
 # TODO Supress warnings about imaginary numbers
 
-
 def gen_cong_op(k, A, cong):
+    # Build out full structure
     ret = [ basis(2**(2*k), i).full().astype(int).flatten().tolist() for i in range(2**(2*k)) ]
+
+    # Encode the congruence classes
     for i,C in enumerate(UA.cong_classes(cong, A)):
-        #out = int_to_bin(i,k)
         for x in C:
             xb = bin_to_int(x)
             for offset in range(2**k):
                 xb_ket = tensor([ basis(2, 1) if d == 1 else basis(2, 0) for d in x ])
-                offset_ket = tensor([ basis(2,1)
-                                        if d == 1
-                                        else basis(2,0) for d in int_to_bin((i+offset)%2**k, k) ])
+                offset_ket = tensor([ basis(2,d) for d in int_to_bin((i+offset)%2**k, k) ])
                 ket = tensor( xb_ket, offset_ket)
                 index = 2**k*xb+offset
                 ret[index] = ket.full().astype(int).flatten().tolist()
@@ -35,12 +33,7 @@ def gen_meet_op(n, A):
                 for i in range(len(meet_structure)) ]
     return foldl(operator.add, Meets)
 
-# Simulates the experimental Semilattice algorithm
-# In: n, the number of digits needed to represent group elements in binary;
-#       P, an oracle operator encoding the homomorphism phi
-# Out: TBD
-def SemilatAlg(n,P,A):
-    M = gen_meet_op(n, A)
+def phi_circuit(n,P):
     # Prepare the state psi
     # NOTE Tensoring a bunch of small basis vectors may seem silly
     # considering other options. However, this properly builds up
@@ -55,19 +48,19 @@ def SemilatAlg(n,P,A):
 
     # Apply Phi
     post_phi = P * regs
+    return post_phi
 
-    # "discard" register 1
-    print('~'*10,'Experimenting with partial trace on output of Phi','~'*10)
+# Simulates the experimental Semilattice algorithm
+# In: n, the number of digits needed to represent group elements in binary;
+#       P, an oracle operator encoding the homomorphism phi
+# Out: TBD
+def SemilatAlg(n,P,A):
+    M = gen_meet_op(n, A)
     #phi_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
 
     #phi_res_transform = ht * phi_res
     #print('~'*10,'phi_res_transform','~'*10)
     #print(phi_res_transform)
-
-    post_phi_transform = tensor(ht, identity([2 for _ in range(n)])) * post_phi
-    post_transform_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
-    print('~'*10,'post_transform_res','~'*10)
-    print(post_transform_res)
 
     # Experimental stuff
     #outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in phi_res.full() ]
@@ -82,30 +75,139 @@ def SemilatAlg(n,P,A):
     #print(yld*zn)
 
     # NOTE Overflow occurs for n > 3
-    print('~'*10,'Experimenting with I_n tensor M','~'*10)
+    #print('~'*10,'Experimenting with I_n tensor M','~'*10)
 
     # augment M
-    M_aug = tensor( identity([2 for _ in range(n)]), M)
+    #M_aug = tensor( identity([2 for _ in range(n)]), M)
 
     # prep full register
-    full_reg = tensor( post_phi, psi, zn ) # 2n x n x n
+    #full_reg = tensor( post_phi, psi, zn ) # 2n x n x n
 
     # Apply M_aug
-    full_res = M_aug * full_reg
+    #full_res = M_aug * full_reg
 
-    print('~'*10, 'full_res', '~'*10)
-    print(full_res.data)
+    #print('~'*10, 'full_res', '~'*10)
+    #print(full_res.data)
 
     # Restrict the space to area of interest
-    interest = full_res.ptrace( [4*n - i for i in range(n,0,-1)] )
-    print('~'*10, 'interest', '~'*10)
-    print(interest)
+    #interest = full_res.ptrace( [4*n - i for i in range(n,0,-1)] )
+    #print('~'*10, 'interest', '~'*10)
+    #print(interest)
 
     # Apply Hadamard gates
-    interest_transform = ht * interest
-    print('~'*10, 'interest_transform', '~'*10)
-    print(interest_transform.data)
+    #interest_transform = ht * interest
+    #print('~'*10, 'interest_transform', '~'*10)
+    #print(interest_transform.data)
 
+# ~~~ Experiments ~~~
+def exp1(n,P,A):
+    print('~'*10,'Experiment 1','~'*10)
+    print('Meet every element of A with the Hadamard transformed result of Phi')
+    M = gen_meet_op(n, A)
+    zn = tensor([ basis(2, 0) for _ in range(n) ])
+    ht = hadamard_transform(n)
+    psi = ht * zn
+    I_n = identity([2 for _ in range(n)])
+    gen_last_reg = lambda a: [a*n - i for i in range(n,0,-1)] # a is arity of function
+
+    post_phi = phi_circuit(n,P)
+    ht_aug = tensor(ht, I_n)
+    post_phi_transform = ht_aug * post_phi
+    ppt_tr = post_phi_transform.ptrace(gen_last_reg(2))
+
+    print('~'*10,'post_phi','~'*10)
+    print(post_phi)
+    print('~'*10,'post_phi_transform','~'*10)
+    print(post_phi_transform)
+    print('~'*10,'post_phi_transform traced','~'*10)
+    print(ppt_tr)
+
+
+    # Meet the resultant with all element of t
+    for t in A:
+        print('~'*10,t,'~'*10)
+        t_ket = tensor([ basis(2, i) for i in t ])
+
+        # Control Calculation
+        control_reg = tensor(t_ket,t_ket,zn)
+        control_res = M * control_reg
+        control_out = control_res.ptrace(gen_last_reg(3))
+        print('t ^ t')
+        print(control_out)
+
+        # Experimental Calculation
+        M_aug = tensor( identity([2 for _ in range(n)]), M )
+        exp_reg = tensor(post_phi_transform, t_ket, zn) # 2n x n x n
+        exp_res = M_aug * exp_reg
+        exp_out = exp_res.ptrace(gen_last_reg(4))
+        print('phi_out ^ t')
+        print(exp_out)
+
+def exp2(n,P,A):
+    print('~'*10,'Experiment 2','~'*10)
+    print('Meet every element of A with the untransformed result of Phi')
+    M = gen_meet_op(n, A)
+    zn = tensor([ basis(2, 0) for _ in range(n) ])
+    ht = hadamard_transform(n)
+    psi = ht * zn
+    I_n = identity([2 for _ in range(n)])
+    gen_last_reg = lambda a: [a*n - i for i in range(n,0,-1)] # a is arity of function
+
+    post_phi = phi_circuit(n,P)
+
+    # Meet the resultant with all element of t
+    for t in A:
+        print('~'*10,t,'~'*10)
+        t_ket = tensor([ basis(2, i) for i in t ])
+
+        # Control Calculation
+        control_reg = tensor(t_ket,t_ket,zn)
+        control_res = M * control_reg
+        control_out = control_res.ptrace(gen_last_reg(3))
+        print('t ^ t')
+        print(control_out)
+
+        # Experimental Calculation
+        M_aug = tensor( identity([2 for _ in range(n)]), M )
+        exp_reg = tensor(post_phi, t_ket, zn) # 2n x n x n
+        exp_res = M_aug * exp_reg
+        exp_out = exp_res.ptrace(gen_last_reg(4))
+        print('phi_out ^ t')
+        print(exp_out)
+
+def exp3(n,P,A):
+    print('~'*10,'Experiment 3','~'*10)
+    print('Meet every element of A with the untransformed result of Phi')
+    print('then Hadamard transform the result')
+    M = gen_meet_op(n, A)
+    zn = tensor([ basis(2, 0) for _ in range(n) ])
+    ht = hadamard_transform(n)
+    psi = ht * zn
+    I_n = identity([2 for _ in range(n)])
+    gen_last_reg = lambda a: [a*n - i for i in range(n,0,-1)] # a is arity of function
+
+    post_phi = phi_circuit(n,P)
+
+    # Meet the resultant with all element of t
+    for t in A:
+        print('~'*10,t,'~'*10)
+        t_ket = tensor([ basis(2, i) for i in t ])
+
+        # Control Calculation
+        control_reg = tensor(t_ket,t_ket,zn)
+        control_res = M * control_reg
+        control_out = control_res.ptrace(gen_last_reg(3))
+        print('t ^ t')
+        print(control_out)
+
+        # Experimental Calculation
+        M_aug = tensor( identity([2 for _ in range(n)]), M )
+        exp_reg = tensor(post_phi, t_ket, zn) # 2n x n x n
+        exp_res = M_aug * exp_reg
+        exp_out = exp_res.ptrace(gen_last_reg(4))
+        exp_out_ht = ht * exp_out
+        print('phi_out ^ t transformed')
+        print(exp_out_ht)
 # ~~~ Testing ~~~
 
 # Using the partial implementation of Simon's algorithm
@@ -127,4 +229,13 @@ for C in UA.cong_classes(Theta, A):
 
 Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[[2]*2*n, [2]*2*n] )
 
-SemilatAlg(n,Phi,A)
+exp1(n,Phi,A)
+print('\n'*2)
+exp2(n,Phi,A)
+print('\n'*2)
+exp3(n,Phi,A)
+
+#SemilatAlg(n,Phi,A)
+#for t,outlook in SemilatAlg(n,Phi,A):
+#    print('~'*10,t,'~'*10)
+#    print(outlook)
