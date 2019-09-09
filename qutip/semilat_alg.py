@@ -17,7 +17,7 @@ def gen_cong_op(k, A, cong):
         for x in C:
             xb = bin_to_int(x)
             for offset in range(2**k):
-                xb_ket = tensor([ basis(2, 1) if d == 1 else basis(2, 0) for d in x ])
+                xb_ket = tensor([ basis(2, d) for d in x ])
                 offset_ket = tensor([ basis(2,d) for d in int_to_bin((i+offset)%2**k, k) ])
                 ket = tensor( xb_ket, offset_ket)
                 index = 2**k*xb+offset
