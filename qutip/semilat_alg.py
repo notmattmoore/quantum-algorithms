@@ -54,50 +54,37 @@ def phi_circuit(n,P):
 # In: n, the number of digits needed to represent group elements in binary;
 #       P, an oracle operator encoding the homomorphism phi
 # Out: TBD
+# TODO Determine where to go with this
 def SemilatAlg(n,P,A):
+    # Set up
     M = gen_meet_op(n, A)
-    #phi_res = post_phi.ptrace([ 2*n - i for i in range(n,0,-1) ])
+    zn = tensor([ basis(2, 0) for _ in range(n) ])
+    ht = hadamard_transform(n)
+    psi = ht * zn
+    I_n = identity([2 for _ in range(n)])
+    gen_last_reg = lambda a: [a*n - i for i in range(n,0,-1)] # a is arity of function
 
-    #phi_res_transform = ht * phi_res
-    #print('~'*10,'phi_res_transform','~'*10)
-    #print(phi_res_transform)
-
-    # Experimental stuff
-    #outs = [ M * tensor( Qobj(inpt=row, dims=[[2]*n,[1]*n]), psi, zn ) for row in phi_res.full() ]
-    #dm = foldl(operator.add, outs)
-    #dm_last = dm.ptrace([ 3*n-i for i in range(n,0,-1) ])
-
-    # Apply Hadamard gate
-    #yld = dm_last * ht
-    #print('~~~~~~~~ yld ~~~~~~~~')
-    #print(yld)
-    #print('~~~~~~~~ yld*zn ~~~~~~~~')
-    #print(yld*zn)
-
-    # NOTE Overflow occurs for n > 3
-    #print('~'*10,'Experimenting with I_n tensor M','~'*10)
+    post_phi = phi_circuit(n,P)
+    ht_aug = tensor(ht, I_n)
+    post_phi_transform = ht_aug * post_phi
+    ppt_tr = post_phi_transform.ptrace(gen_last_reg(2))
 
     # augment M
-    #M_aug = tensor( identity([2 for _ in range(n)]), M)
+    M_aug = tensor( identity([2 for _ in range(n)]), M)
 
     # prep full register
-    #full_reg = tensor( post_phi, psi, zn ) # 2n x n x n
+    full_reg = tensor( post_phi, psi, zn )
 
     # Apply M_aug
-    #full_res = M_aug * full_reg
+    full_res = M_aug * full_reg
 
-    #print('~'*10, 'full_res', '~'*10)
-    #print(full_res.data)
-
-    # Restrict the space to area of interest
-    #interest = full_res.ptrace( [4*n - i for i in range(n,0,-1)] )
-    #print('~'*10, 'interest', '~'*10)
-    #print(interest)
+    # Reduce to the register of interest
+    targ = full_res.ptrace( [4*n - i for i in range(n,0,-1)] )
 
     # Apply Hadamard gates
-    #interest_transform = ht * interest
-    #print('~'*10, 'interest_transform', '~'*10)
-    #print(interest_transform.data)
+    targ_transform = ht * targ
+    print('~'*10, 'interest_transform', '~'*10)
+    print(targ_transform.data)
 
 # ~~~ Experiments ~~~
 def exp1(n,P,A):
@@ -229,13 +216,4 @@ for C in UA.cong_classes(Theta, A):
 
 Phi = Qobj( inpt=gen_cong_op(n, A, Theta), dims=[[2]*2*n, [2]*2*n] )
 
-exp1(n,Phi,A)
-print('\n'*2)
-exp2(n,Phi,A)
-print('\n'*2)
-exp3(n,Phi,A)
-
-#SemilatAlg(n,Phi,A)
-#for t,outlook in SemilatAlg(n,Phi,A):
-#    print('~'*10,t,'~'*10)
-#    print(outlook)
+SemilatAlg(n,Phi,A)
