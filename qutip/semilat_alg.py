@@ -24,11 +24,24 @@ def gen_cong_op(k, A, cong):
                 ret[index] = ket.full().astype(int).flatten().tolist()
     return ret
 
+def gen_op(k, f, arity=0, mult=1):
+    ret = [ [ 0 for _ in range(2**(k*arity)) ] for _ in range(2**(k*arity)) ]
+    for x in range(len(f)):
+        index = mult*(mult-1)
+        for offset in range(len(f)):
+            fx = bin_to_int(f[x])
+            mult_ket = tensor([ basis(2, d) for d in int_to_bin(mult-1, k) ])
+            fx_ket = tensor([ basis(2, d) for d in f[x] ])
+            offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
+            ket = tensor( mult_ket, fx_ket, offset_ket )
+            ret[index+offset] = ket.full().astype(int).flatten().tolist()
+    return ret
+
 def gen_meet_op(n, A):
     meet_structure = [ [ meet(x,y) for y in A ] for x in A ]
     Meets = [
                 Qobj(
-                    inpt=gen_oracle_op(n, meet_structure[i], arity=3, mult=i+1),
+                    inpt=gen_op(n, meet_structure[i], arity=3, mult=i+1),
                     dims=[[2]*3*n for _ in range(2) ])
                 for i in range(len(meet_structure)) ]
     return foldl(operator.add, Meets)
