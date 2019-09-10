@@ -32,34 +32,3 @@ def bin_to_int(x):
 def gen_bin_list(k, xs):
     return [ int_to_bin(x,k) for x in xs ]
 
-# Generates an oracle function for Simon's Algorithm
-# In: k, order (?) of the group; D, the hidden subgroup D;
-#     c, the common value for f(x) forall x in D
-# Out: a function (array-form) that seperates cosets on the hidden subgroup
-#     (f(a)=f(b) iff a-b in D)
-def gen_oracle(k, D, c=0):
-    bin_c = int_to_bin(c,k)
-    return [ bin_c if int_to_bin(x, k) in D else int_to_bin(x, k) for x in range(2**k) ]
-    # TODO improve ^ by minimizing "checks"
-
-# Generates an oracle operator for Simon's Algorithm (Note: assumes structure
-#     of oracle)
-# In: k, the size of the group; f, the oracle function; mult, multiplier for the
-#       if applicable
-# Out: a (2**k)x(2**k) unitary operator embedding the oracle function
-def gen_oracle_op(k, f, arity=0, mult=1):
-    ret = [ [ 0 for _ in range(2**(k*arity)) ] for _ in range(2**(k*arity)) ]
-    for x in range(len(f)):
-        index = mult*(mult-1)
-        for offset in range(len(f)):
-            fx = bin_to_int(f[x])
-            mult_ket = tensor([ basis(2, 1) if d == 1
-                                else basis(2, 0) for d in int_to_bin(mult-1, k) ])
-            fx_ket = tensor([ basis(2, 1) if d == 1 else basis(2, 0) for d in f[x] ])
-            offset_ket = tensor([ basis(2, 1) if d == 1
-                                else basis(2, 0) for d
-                                in int_to_bin((fx+offset)%2**k, k) ])
-            ket = tensor(   mult_ket, fx_ket, offset_ket )
-            # append just the array underlying the tensor
-            ret[index+offset] = ket.full().astype(int).flatten().tolist()
-    return ret
