@@ -288,37 +288,10 @@ class Operation: # {{{1
 #----------------------------------------------------------------------------}}}1
 
 def is_reln(R, Ops, Skip = [], Progress=True, return_on_fail=True): # {{{
-  cores = 4
-  pool = Pool(cores)
-  op_total = len(Ops)
-  for op_count, op in enumerate(Ops):
-    if op.name in Skip:
-      continue
-    args_total = len(R)**op.arity
-    args_all = product(R, repeat=op.arity)
-    # We have to seek the arguments that gave a certain result. In case we don't
-    # return_on_fail, we should keep track of the previous index. Not a good
-    # soln...
-    args_all_seek = product(R, repeat=op.arity)
-    prev_args_count = -1
-    for args_count, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
-      if result not in R:
-        stdout.write("\n\nFound " + str(result) + ":\n")
-        args = next(islice(args_all_seek, args_count-prev_args_count-1, None))
-        prev_args_count = args_count
-        stdout.write(op.pprint(args) + "\nwhich is not in the relation.\n")
-        if return_on_fail:
-          return False
-      if Progress and args_count % 100000 == 0:
-        stdout.write( "\roperation " + op.name \
-            + " " + str(op_count+1) + " / " + str(op_total) \
-            + ", argument " + str(args_count) + " / " + str(args_total) \
-            + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%  " )
-        stdout.flush()
-  if Progress: stdout.write("  done.\n")
-  return True
+  found_new = lambda x: True
+  Rp = single_closure([], R, Ops, Progress=Progress, Search=found_new)
+  return R == Rp
 #----------------------------------------------------------------------------}}}
-
 def powerset_as_indicators(size): # {{{
   I = [0]*size
   T = [1]*size
@@ -503,30 +476,3 @@ def cong_classes(C, A): # {{{
           classes[-1].append(b)
   return classes
 #----------------------------------------------------------------------------}}}
-
-
-#Example:
-#def m(x,y):
-#  z = [-1]*len(x)
-#  for i in range(len(x)):
-#    z[i] = x[i]*y[i]
-#  return z
-#
-#M = Operation(m, 2, "m")
-#
-#A = FancySet( initial=[list(a) for a in list(product([0,1],repeat=3))] )
-#G = [ [[1,1,1], [1,0,1]] ] + [ [a]*2 for a in A ]
-#C = cong_gen(G, [M])
-#D = rand_cong(A, [M], 1)
-#
-#found = []
-#for a in A:
-#  if a in found:
-#    continue
-#  for b in A:
-#    if b in found:
-#      continue
-#    if [a,b] in D:
-#      found.append(b)
-#      stdout.write(str(b) + " ")
-#  stdout.write("\n")
