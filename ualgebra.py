@@ -473,16 +473,21 @@ def cong_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, MaxL
       ExtraClosure=transitive_closure_wrapper, SavePartial=SavePartial, \
       MaxLevels=MaxLevels)
 #----------------------------------------------------------------------------}}}
-def rand_cong(A, Ops, num_gen=-1, Progress=True): # {{{
+def rand_cong(A, Ops, num_gen=-1, Progress=True, ListGens=True): # {{{
   if num_gen == -1:
     num_gen = randrange(1,len(A)+1)
 
-  G = [ [a,a] for a in A ]
+  G = []
   A_list = list(A)
   for _ in range(num_gen):
     a = choice(A_list)
     b = choice(A_list)
     G.append([a,b])
+  if ListGens:
+    stdout.write( "Random Generators:\n" )
+    for g in G:
+      stdout.write("  " + str(g) + "\n")
+  G = G + [ [a,a] for a in A ]
   return cong_gen(G, Ops, Progress=Progress)
 #----------------------------------------------------------------------------}}}
 def cong_classes(C, A): # {{{
