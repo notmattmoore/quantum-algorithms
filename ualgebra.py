@@ -448,7 +448,7 @@ def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial
       Search=Search, ExtraClosure=transitive_closure_wrapper, \
       SavePartial=SavePartial, MaxLevels=MaxLevels)
 #----------------------------------------------------------------------------}}}
-def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False, ListGens=True): # {{{
+def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
   if num_gen == -1:
     num_gen = randrange(1,len(A)+1)
 
@@ -458,12 +458,9 @@ def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False, ListGens=True): # {
     a = choice(A_list)
     b = choice(A_list)
     G.append([a,b])
-  if ListGens:
-    stdout.write( "Random Generators:\n" )
-    for g in G:
-      stdout.write("  " + str(g) + "\n")
-  G = G + [ [a,a] for a in A ]
-  return cong_gen(G, Ops, MaxNew=MaxNew, Progress=Progress)
+  Gens = G + [ [a,a] for a in A ]
+  # return the congruence as well as the generators
+  return cong_gen(Gens, Ops, MaxNew=MaxNew, Progress=Progress), G
 #----------------------------------------------------------------------------}}}
 def cong_classes(C, A): # {{{
   # output the congruence classes of C
