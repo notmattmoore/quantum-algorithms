@@ -15,6 +15,7 @@ missing or could be improved.
 
 ## Software
 
+[QuTiP](http://qutip.org) (Quantum Toolbox in Python) is open-source software designed for simulating "the dynamics of open quantum systems." So far, it has been useful for experimenting with the time-evolution of unitary operators and implementing algorithms. Software installation instructions can be found [here](http://qutip.org/docs/latest/installation.html) .
 
 ## Reference Texts
 * [Classical and Quantum Computation][Kitaev Shen Vyalyi book]

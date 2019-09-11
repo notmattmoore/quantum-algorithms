@@ -36,12 +36,18 @@ print("Congruence classes:")
 for C in UA.cong_classes(Theta, A):
   print("  ", C)
 
-print("\na b S")
+print("\nSimons over first register")
+print("a b S")
 #for a,b in product(A,repeat=2):
 #for a,b in combinations(A,2):
 for a in A:
   S = simon_sum(Theta, a, a)
-  print(a, a, S, "|")
+  print("  ",a, a, S)
+
+print("\nSimons over second register")
+print("t | size of congruence")
+for i,C in enumerate(UA.cong_classes(Theta, A)):
+    print("  ", i, len(C))
 
 exit()
 
@@ -50,6 +56,7 @@ def meet(x,y):
   # meet as the bit-wise product
   return [x[i]*y[i] for i in range(len(x))]
 
+<<<<<<< HEAD
 Ops = []
 Ops.append(UA.Operation(meet, 2, "meet"))
 #----------------------------------------------------------------------------}}}1
