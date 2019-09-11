@@ -56,7 +56,6 @@ def meet(x,y):
   # meet as the bit-wise product
   return [x[i]*y[i] for i in range(len(x))]
 
-<<<<<<< HEAD
 Ops = []
 Ops.append(UA.Operation(meet, 2, "meet"))
 #----------------------------------------------------------------------------}}}1
