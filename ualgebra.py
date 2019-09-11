@@ -288,37 +288,10 @@ class Operation: # {{{1
 #----------------------------------------------------------------------------}}}1
 
 def is_reln(R, Ops, Skip = [], Progress=True, return_on_fail=True): # {{{
-  cores = 4
-  pool = Pool(cores)
-  op_total = len(Ops)
-  for op_count, op in enumerate(Ops):
-    if op.name in Skip:
-      continue
-    args_total = len(R)**op.arity
-    args_all = product(R, repeat=op.arity)
-    # We have to seek the arguments that gave a certain result. In case we don't
-    # return_on_fail, we should keep track of the previous index. Not a good
-    # soln...
-    args_all_seek = product(R, repeat=op.arity)
-    prev_args_count = -1
-    for args_count, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
-      if result not in R:
-        stdout.write("\n\nFound " + str(result) + ":\n")
-        args = next(islice(args_all_seek, args_count-prev_args_count-1, None))
-        prev_args_count = args_count
-        stdout.write(op.pprint(args) + "\nwhich is not in the relation.\n")
-        if return_on_fail:
-          return False
-      if Progress and args_count % 100000 == 0:
-        stdout.write( "\roperation " + op.name \
-            + " " + str(op_count+1) + " / " + str(op_total) \
-            + ", argument " + str(args_count) + " / " + str(args_total) \
-            + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%  " )
-        stdout.flush()
-  if Progress: stdout.write("  done.\n")
-  return True
+  found_new = lambda x: True
+  Rp = single_closure([], R, Ops, Progress=Progress, Search=found_new)
+  return R == Rp
 #----------------------------------------------------------------------------}}}
-
 def powerset_as_indicators(size): # {{{
   I = [0]*size
   T = [1]*size
@@ -331,7 +304,7 @@ def powerset_as_indicators(size): # {{{
     I[index] = 1
   yield copy(I)
 #----------------------------------------------------------------------------}}}
-def single_closure(G_old, G_new, Ops, Progress=True, Search=None):  # {{{
+def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  # {{{
   # G_old is a set of elements. G_new has been computed by taking G_old and
   # applying single functions from Ops to it. It should be disjoint from G_old.
   # We return G_newer, which is the result of applying functions from Ops to
@@ -373,11 +346,13 @@ def single_closure(G_old, G_new, Ops, Progress=True, Search=None):  # {{{
               + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%" \
               + ", new elements: " + str(len(G_newer)) + " "*2 )
           stdout.flush()
+        if 0 < MaxNew <= len(G_newer):  # return if found the max number of new elements
+          return G_newer
   if Progress:
     stdout.write("  done.\n")
   return G_newer
 #----------------------------------------------------------------------------}}}
-def subalg_gen(Generators, Ops, Progress=True, Search=None, ExtraClosure=None, SavePartial=None, MaxLevels=-1):  # {{{
+def subalg_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, ExtraClosure=None, SavePartial=None, MaxLevels=-1):  # {{{
   G_old = FancySet()
   G_new = FancySet(initial=Generators)
   closure_level = 0
@@ -391,7 +366,7 @@ def subalg_gen(Generators, Ops, Progress=True, Search=None, ExtraClosure=None, S
       stdout.write( "Closure level " + str(closure_level) + ", " )
       stdout.write( "at " + str(len(G_old) + len(G_new)) + " elements:\n" )
       stdout.flush()
-    G_newer = single_closure(G_old, G_new, Ops, Progress=Progress, Search=Search)
+    G_newer = single_closure(G_old, G_new, Ops, MaxNew=MaxNew, Progress=Progress, Search=Search)
     if ExtraClosure != None:
       G_extra = ExtraClosure(G_old, G_new, Ops, Search=Search)
       if Progress:
@@ -451,7 +426,7 @@ def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
           stdout.write( "\nFound:\n" + why + "\n" )
   return C_newer
 #----------------------------------------------------------------------------}}}
-def cong_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
+def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
 
   A = FancySet()
   GeneratorsCong = FancySet( initial=Generators )
@@ -469,21 +444,23 @@ def cong_gen(Generators, Ops, Progress=True, Search=None, SavePartial=None, MaxL
   def transitive_closure_wrapper(C, C_new, Ops, A=A, Search=Search):
     return transitive_closure_layer(C, C_new, A, Search=Search)
 
-  return subalg_gen(GeneratorsCong, Ops, Progress=Progress, Search=Search, \
-      ExtraClosure=transitive_closure_wrapper, SavePartial=SavePartial, \
-      MaxLevels=MaxLevels)
+  return subalg_gen(GeneratorsCong, Ops, MaxNew=MaxNew, Progress=Progress, \
+      Search=Search, ExtraClosure=transitive_closure_wrapper, \
+      SavePartial=SavePartial, MaxLevels=MaxLevels)
 #----------------------------------------------------------------------------}}}
-def rand_cong(A, Ops, num_gen=-1, Progress=True): # {{{
+def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
   if num_gen == -1:
     num_gen = randrange(1,len(A)+1)
 
-  G = [ [a,a] for a in A ]
+  G = []
   A_list = list(A)
   for _ in range(num_gen):
     a = choice(A_list)
     b = choice(A_list)
     G.append([a,b])
-  return cong_gen(G, Ops, Progress=Progress)
+  Gens = G + [ [a,a] for a in A ]
+  # return the congruence as well as the generators
+  return cong_gen(Gens, Ops, MaxNew=MaxNew, Progress=Progress), G
 #----------------------------------------------------------------------------}}}
 def cong_classes(C, A): # {{{
   # output the congruence classes of C
@@ -498,30 +475,3 @@ def cong_classes(C, A): # {{{
           classes[-1].append(b)
   return classes
 #----------------------------------------------------------------------------}}}
-
-
-#Example:
-#def m(x,y):
-#  z = [-1]*len(x)
-#  for i in range(len(x)):
-#    z[i] = x[i]*y[i]
-#  return z
-#
-#M = Operation(m, 2, "m")
-#
-#A = FancySet( initial=[list(a) for a in list(product([0,1],repeat=3))] )
-#G = [ [[1,1,1], [1,0,1]] ] + [ [a]*2 for a in A ]
-#C = cong_gen(G, [M])
-#D = rand_cong(A, [M], 1)
-#
-#found = []
-#for a in A:
-#  if a in found:
-#    continue
-#  for b in A:
-#    if b in found:
-#      continue
-#    if [a,b] in D:
-#      found.append(b)
-#      stdout.write(str(b) + " ")
-#  stdout.write("\n")
