@@ -1,7 +1,10 @@
 # imports {{{1
 from itertools import *
 from sys import *
+from collections import Counter
+from number_representation import *
 import ualgebra as UA
+import random
 #----------------------------------------------------------------------------}}}1
 
 def simon_sum(cong, a, b): # {{{
@@ -49,8 +52,6 @@ print("t | size of congruence")
 for i,C in enumerate(UA.cong_classes(Theta, A)):
     print("  ", i, len(C))
 
-exit()
-
 # experiment for semilattices {{{1
 def meet(x,y):
   # meet as the bit-wise product
@@ -58,4 +59,48 @@ def meet(x,y):
 
 Ops = []
 Ops.append(UA.Operation(meet, 2, "meet"))
+#----------------------------------------------------------------------------}}}1
+
+# Sampling experiment
+class Bag:
+    '''Extends the Counter objec to better support Bag functions'''
+    def __init__(self, elements):
+        self.elements = Counter(elements)
+
+    def stuff(self, elements):
+        self.elements.update(elements)
+
+    def grab(self):
+        return random.choice(sorted(self.elements.elements()))
+
+class ProbDist:
+    '''Mimics a probability distribution'''
+    def __init__(self, n, A, dm):
+        self.n = n
+        es = dict()
+        for a in A:
+            an = arr_to_int(a)
+            es[an] = int(2**n * dm[an][an])
+        self.dist = Bag(es)
+
+    def sample(self):
+        return int_to_arr(self.dist.grab(),self.n)
+
+# create desnity matrix (sorta)
+dm = [ [ 0 for _ in A ] for _ in A ]
+for a in A:
+    an = arr_to_int(a)
+    dm[an][an] = 2**(-2*n) * simon_sum(Theta, a, a)
+for row in dm:
+    print(row)
+pd = ProbDist(n,A,dm)
+samples = 1000
+print("\n{0} samples from pd".format(samples))
+res = Counter()
+for i in range(samples):
+    res.update([ arr_to_int(pd.sample()) ])
+print('\noutcome | ratio')
+for outcome, count in res.items():
+    oa = int_to_arr(outcome,n)
+    print(oa, '|', count/samples)
 #----------------------------------------------------------------------------}}}1
