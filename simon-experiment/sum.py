@@ -5,6 +5,7 @@ from collections import Counter
 from number_representation import *
 import ualgebra as UA
 import random
+import math
 #----------------------------------------------------------------------------}}}1
 
 def simon_sum(cong, a, b): # {{{
@@ -28,9 +29,9 @@ Ops.append(UA.Operation(meet, 2, "meet"))
 Ops.append(UA.Operation(join, 2, "join"))
 #----------------------------------------------------------------------------}}}1
 
-n = 4
+n = 3
 A = UA.FancySet( initial=[list(a) for a in list(product([0,1],repeat=n))] ) # {0,1}^n
-Theta, G = UA.rand_cong(A, Ops, MaxNew=len(A), Progress=True)
+Theta, G = UA.rand_cong(A, Ops, num_gen=1, MaxNew=len(A), Progress=True)
 
 print("Generators:")
 for g in G:
@@ -86,21 +87,47 @@ class ProbDist:
     def sample(self):
         return int_to_arr(self.dist.grab(),self.n)
 
-# create desnity matrix (sorta)
+def comp(x):
+    return [ 1-d for d in x ]
+
 dm = [ [ 0 for _ in A ] for _ in A ]
 for a in A:
     an = arr_to_int(a)
     dm[an][an] = 2**(-2*n) * simon_sum(Theta, a, a)
+
+print('\nDensity Matrix')
 for row in dm:
     print(row)
+
 pd = ProbDist(n,A,dm)
-samples = 1000
-print("\n{0} samples from pd".format(samples))
+samples = 5*math.ceil(math.log2(2**n)) # poly-log in N
+queries = Counter()
+B = UA.FancySet()
 res = Counter()
+Ops = [UA.Operation(meet,2,'meet'),UA.Operation(join,2,'join')]
+hcong = []
+
+print(' ')
 for i in range(samples):
-    res.update([ arr_to_int(pd.sample()) ])
-print('\noutcome | ratio')
-for outcome, count in res.items():
-    oa = int_to_arr(outcome,n)
-    print(oa, '|', count/samples)
+    val = pd.sample()
+    ival = arr_to_int(val)
+    res.update([ ival ])
+    B.add(val,addl='{0}th sample'.format(i+1))
+    if res[ival] == 1:
+        hcong.append((val,val))
+        for a,b in combinations(B,2):
+            # Find the bigger of the two
+            pa = a,arr_to_int(a)
+            pb = b,arr_to_int(b)
+            h = pa
+            l = pb
+            if pb[1] > h[1]:
+                h = pb
+                l = pa
+            for x in A:
+                if meet(x,h[0]) == l:
+                    hcong.extend([ (l[0],x),(x,l[0]) ])
+
+    print('B', str(B))
+    print('hidden cong',hcong)
 #----------------------------------------------------------------------------}}}1
