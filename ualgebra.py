@@ -327,6 +327,7 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
       if vars_old_new == all_old:
         continue
       args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
+      print('args_all',list(args_all)) # TODO Figure out why this fixes a bug
       # we have to seek the arguments that gave us result... not a good soln...
       args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
       prev_args_index = -1
@@ -407,7 +408,7 @@ def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
   # C and C_new are sets of elements, with C_new disjoint from C. A is the
   # underlying algebra. C is assumed to be transitively closed. Returns a set
   # C_newer of elements that are not in C u C_newer but are in the transitive
-  # closure. 
+  # closure.
 
   C_newer = FancySet()
 

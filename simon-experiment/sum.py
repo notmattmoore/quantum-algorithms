@@ -105,29 +105,31 @@ queries = Counter()
 B = UA.FancySet()
 res = Counter()
 Ops = [UA.Operation(meet,2,'meet'),UA.Operation(join,2,'join')]
-hcong = []
+hcong = {}
+redux = {} # The things lost reduced to another value
 
 print(' ')
 for i in range(samples):
     val = pd.sample()
+    print('Val',val)
     ival = arr_to_int(val)
     res.update([ ival ])
     B.add(val,addl='{0}th sample'.format(i+1))
-    if res[ival] == 1:
-        hcong.append((val,val))
-        for a,b in combinations(B,2):
-            # Find the bigger of the two
-            pa = a,arr_to_int(a)
-            pb = b,arr_to_int(b)
-            h = pa
-            l = pb
-            if pb[1] > h[1]:
-                h = pb
-                l = pa
-            for x in A:
-                if meet(x,h[0]) == l:
-                    hcong.extend([ (l[0],x),(x,l[0]) ])
+    print(str(B))
+    BB = UA.subalg_gen(B, Ops, MaxNew=2**(n-1))
+    if A == BB:
+        print('Do-nothing homomorphism!')
+        break
 
-    print('B', str(B))
-    print('hidden cong',hcong)
+# yield results
+print('Samples')
+print(sorted(res.elements()))
+print("Congruence classes:")
+for C in UA.cong_classes(Theta, A):
+  print("  ", C)
+print('\nDensity Matrix')
+for row in dm:
+    print(row)
+print('BB')
+print(str(BB))
 #----------------------------------------------------------------------------}}}1
