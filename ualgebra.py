@@ -327,7 +327,6 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
       if vars_old_new == all_old:
         continue
       args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
-      print('args_all',list(args_all)) # TODO Figure out why this fixes a bug
       # we have to seek the arguments that gave us result... not a good soln...
       args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
       prev_args_index = -1
