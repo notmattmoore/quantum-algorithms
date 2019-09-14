@@ -29,9 +29,20 @@ missing or could be improved.
   > more details than some other books, but sometimes details can be
   > distracting.
 
+* [Algebras, Lattices, Varieties Volume I][MMT ALV vol1]
+
+  > A good introduction to universal algebra concepts, written in a very
+  > approachable way. Chapters 1 and 2 cover much of the required background
+  > material for the seminar.
+
+* [JB Nation's Notes on Lattice Theory][reference-texts/Nation - Notes on lattice theory.pdf]
+
+  > Notes on order theory and lattice theory by a leader in the field.
+
 
 ## Research Papers
 
 
-[Nielsen Chuang book]: https://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
-[Kitaev Shen Vyalyi book]: https://www.ams.org/books/gsm/047/
+[Nielsen Chuang book]: http://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
+[Kitaev Shen Vyalyi book]: http://www.ams.org/books/gsm/047/
+[MMT ALV vol1]: http://people.math.sc.edu/mcnulty/alglatvar/alvi.pdf
