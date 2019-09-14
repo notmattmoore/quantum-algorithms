@@ -35,7 +35,7 @@ missing or could be improved.
   > approachable way. Chapters 1 and 2 cover much of the required background
   > material for the seminar.
 
-* [JB Nation's Notes on Lattice Theory][reference-texts/Nation%20-%20Notes%20on%20lattice%20theory.pdf]
+* [JB Nation's Notes on Lattice Theory](reference-texts/Nation%20-%20Notes%20on%20lattice%20theory.pdf)
 
   > Notes on order theory and lattice theory by a leader in the field.
 
