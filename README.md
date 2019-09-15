@@ -33,7 +33,8 @@ missing or could be improved.
 
   > A good introduction to universal algebra concepts, written in a very
   > approachable way. Chapters 1 and 2 cover much of the required background
-  > material for the seminar.
+  > material for the seminar. Note that this is the older 1987 edition. There is
+  > a newer 2018 edition.
 
 * [JB Nation's Notes on Lattice Theory](reference-texts/Nation%20-%20Notes%20on%20lattice%20theory.pdf)
 
