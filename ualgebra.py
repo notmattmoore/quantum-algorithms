@@ -1,4 +1,4 @@
-# Version: 2019-09-02
+# Version: 2019-09-16
 # A library for doing computations on universal algebras
 
 # imports {{{1
@@ -36,10 +36,10 @@ class FancySet: # {{{1
   # FS.__leq__(...) is called for S <= T. Looks only at the keys.
   # FS.__eq__(...) is called for S == T. Looks only at the keys.
 
-  # FS.__iter__(...) is called for 'iter(FS)' or implict things involving loops,
-  #   etc. This gives the actual element values, not the strings which index
-  #   them.
-  # FS.__getitem__(...) is called for FS[...]. It returns the element.
+  # FS.__iter__(...) is called for 'iter(FS)' for implict things involving
+  #   loops, etc. This gives the actual element values, not the strings which
+  #   index them.
+  # FS.__getitem__(...) is called for FS[...]. It returns the *element*.
   # FS.__len__(...) is called for 'len(FS)'.
   # FS.__str__(...) is called for 'str(FS)'.
 
@@ -287,6 +287,7 @@ class Operation: # {{{1
 #----------------------------------------------------------------------------}}}
 #----------------------------------------------------------------------------}}}1
 
+# relations
 def is_reln(R, Ops, Skip = [], Progress=True, return_on_fail=True): # {{{
   found_new = lambda x: True
   Rp = single_closure([], R, Ops, Progress=Progress, Search=found_new)
@@ -311,50 +312,49 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
   # inputs from G_old and G_new, with at least 1 element of G_new as input. It
   # will be disjoint from G_old+G_new.
 
-  cores = 4
-  pool = Pool(cores)
-  G_newer = FancySet()
-  op_total = len(Ops)
-  for op_count, op in enumerate(Ops):
-    args_total = (len(G_old)+len(G_new))**op.arity - len(G_old)**op.arity
-    args_count = 0
-    # We don't want to evaluate op(all G_old), so we do all combinations of
-    # elements from G_old and G_new, with at least 1 G_new always appearing. We
-    # do this by quantifying over all variable positions where a new element
-    # will appear.
-    all_old = [0]*op.arity
-    for vars_old_new in powerset_as_indicators(op.arity):
-      if vars_old_new == all_old:
-        continue
-      args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
-      # we have to seek the arguments that gave us result... not a good soln...
-      args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
-      prev_args_index = -1
-      for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
-        # if result is something new
-        if not ( result in G_old or result in G_new or result in G_newer ):
-          args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
-          prev_args_index = args_index
-          G_newer.add(result, op.pprint(*args))
-          if Search != None and Search(result):
-            stdout.write( "\nFound:\n" + op.pprint(*args) + "\n" )
-        args_count += 1
-        if Progress and args_count % 10000 == 0:
-          stdout.write( "\roperation " + op.name \
-              + " " + str(op_count+1) + " / " + str(op_total) \
-              + ", argument " + str(args_count) + " / " + str(args_total) \
-              + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%" \
-              + ", new elements: " + str(len(G_newer)) + " "*2 )
-          stdout.flush()
-        if 0 < MaxNew <= len(G_newer):  # return if found the max number of new elements
-          return G_newer
-  if Progress:
-    stdout.write("  done.\n")
-  return G_newer
+  with Pool() as pool:
+    G_newer = FancySet()
+    op_total = len(Ops)
+    for op_count, op in enumerate(Ops):
+      args_total = (len(G_old)+len(G_new))**op.arity - len(G_old)**op.arity
+      args_count = 0
+      # We don't want to evaluate op(all G_old), so we do all combinations of
+      # elements from G_old and G_new, with at least 1 G_new always appearing.
+      # We do this by quantifying over all variable positions where a new
+      # element will appear.
+      all_old = [0]*op.arity
+      for vars_old_new in powerset_as_indicators(op.arity):
+        if vars_old_new == all_old:
+          continue
+        args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
+        # we have to seek the arguments that gave us result... not a good soln...
+        args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
+        prev_args_index = -1
+        for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
+          # if result is something new
+          if not ( result in G_old or result in G_new or result in G_newer ):
+            args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
+            prev_args_index = args_index
+            G_newer.add(result, op.pprint(*args))
+            if Search != None and Search(result):
+              stdout.write( "\nFound:\n" + op.pprint(*args) + "\n" )
+          args_count += 1
+          if Progress and args_count % 10000 == 0:
+            stdout.write( "\roperation " + op.name \
+                + " " + str(op_count+1) + " / " + str(op_total) \
+                + ", argument " + str(args_count) + " / " + str(args_total) \
+                + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%" \
+                + ", new elements: " + str(len(G_newer)) + " "*2 )
+            stdout.flush()
+          if 0 < MaxNew <= len(G_newer):  # return if found the max number of new elements
+            return G_newer
+    if Progress:
+      stdout.write("  done.\n")
+    return G_newer
 #----------------------------------------------------------------------------}}}
-def subalg_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, ExtraClosure=None, SavePartial=None, MaxLevels=-1):  # {{{
+def subalg_gen(Generators, Ops, ExtraClosure=None, MaxNew=-1, MaxLevels=-1, Progress=True, Search=None, SavePartial=None):  # {{{
   G_old = FancySet()
-  G_new = FancySet(initial=Generators)
+  G_new = FancySet(initial=Generators, addl=["Generator"]*len(Generators))
   closure_level = 0
   if Progress:
     stdout.write("Generators:\n")
@@ -385,7 +385,7 @@ def subalg_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, ExtraClos
 #----------------------------------------------------------------------------}}}
 def subalg_gen_layers(Generators, Ops, Progress=False):  # {{{
   G_old = FancySet()
-  G_new = FancySet(initial=Generators)
+  G_new = FancySet(initial=Generators, addl=["Generator"]*len(Generators))
   closure_level = 0
   if Progress:
     stdout.write("Generators:\n")
@@ -403,6 +403,7 @@ def subalg_gen_layers(Generators, Ops, Progress=False):  # {{{
     G_new = G_newer
 #----------------------------------------------------------------------------}}}
 
+#congruences
 def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
   # C and C_new are sets of elements, with C_new disjoint from C. A is the
   # underlying algebra. C is assumed to be transitively closed. Returns a set
@@ -429,7 +430,7 @@ def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
 def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
 
   A = FancySet()
-  GeneratorsCong = FancySet( initial=Generators )
+  GeneratorsCong = FancySet(initial=Generators, addl=["Generator"]*len(Generators))
 
   # Make sure that Generators contains the diagonal and is symmetric
   for [a,b] in Generators:
@@ -448,20 +449,6 @@ def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial
       Search=Search, ExtraClosure=transitive_closure_wrapper, \
       SavePartial=SavePartial, MaxLevels=MaxLevels)
 #----------------------------------------------------------------------------}}}
-def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
-  if num_gen == -1:
-    num_gen = randrange(1,len(A)+1)
-
-  G = []
-  A_list = list(A)
-  for _ in range(num_gen):
-    a = choice(A_list)
-    b = choice(A_list)
-    G.append([a,b])
-  Gens = G + [ [a,a] for a in A ]
-  # return the congruence as well as the generators
-  return cong_gen(Gens, Ops, MaxNew=MaxNew, Progress=Progress), G
-#----------------------------------------------------------------------------}}}
 def cong_classes(C, A): # {{{
   # output the congruence classes of C
   found = FancySet()
@@ -474,4 +461,31 @@ def cong_classes(C, A): # {{{
           found.add(b)
           classes[-1].append(b)
   return classes
+#----------------------------------------------------------------------------}}}
+
+# random methods
+def rand_subalg(A, Ops, num_gen=-1, MaxNew=-1, Progress=True):  # {{{
+  if num_gen == -1:
+    num_gen = randrange(1,len(A)+1)
+
+  A_list = list(A)
+  G = [ [choice(A_list)] for _ in range(num_gen) ]  # subalg_gen expects vectors!
+
+  # return the relation as well as the generators
+  return subalg_gen(G, Ops, MaxNew=MaxNew, Progress=Progress), G
+#----------------------------------------------------------------------------}}}
+def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
+  if num_gen == -1:
+    num_gen = randrange(1,len(A)+1)
+
+  G = []
+  A_list = list(A)
+  for _ in range(num_gen):
+    a = choice(A_list)
+    b = choice(A_list)
+    G.append([a,b])
+  Gens = G + [ [a,a] for a in A ]
+
+  # return the congruence as well as the generators
+  return cong_gen(Gens, Ops, MaxNew=MaxNew, Progress=Progress), G
 #----------------------------------------------------------------------------}}}
