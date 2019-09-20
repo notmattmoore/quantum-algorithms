@@ -403,7 +403,7 @@ def subalg_gen_layers(Generators, Ops, Progress=False):  # {{{
     G_new = G_newer
 #----------------------------------------------------------------------------}}}
 
-#congruences
+# congruences
 def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
   # C and C_new are sets of elements, with C_new disjoint from C. A is the
   # underlying algebra. C is assumed to be transitively closed. Returns a set
