@@ -12,7 +12,6 @@ def simon_sum(cong, a, b): # {{{
   return S
 #----------------------------------------------------------------------------}}}
 
-# experiment for distributive lattices {{{1
 def meet(x,y):
   # meet as the bit-wise product
   return [x[i]*y[i] for i in range(len(x))]
@@ -22,8 +21,7 @@ def join(x,y):
 
 Ops = []
 Ops.append(UA.Operation(meet, 2, "meet"))
-Ops.append(UA.Operation(join, 2, "join"))
-#----------------------------------------------------------------------------}}}1
+Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
 
 n = 4
 A = UA.FancySet( initial=[list(a) for a in list(product([0,1],repeat=n))] ) # {0,1}^n
@@ -50,12 +48,3 @@ for i,C in enumerate(UA.cong_classes(Theta, A)):
     print("  ", i, len(C))
 
 exit()
-
-# experiment for semilattices {{{1
-def meet(x,y):
-  # meet as the bit-wise product
-  return [x[i]*y[i] for i in range(len(x))]
-
-Ops = []
-Ops.append(UA.Operation(meet, 2, "meet"))
-#----------------------------------------------------------------------------}}}1
