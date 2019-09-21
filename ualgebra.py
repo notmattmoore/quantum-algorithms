@@ -324,7 +324,9 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
       # element will appear.
       all_old = [0]*op.arity
       for vars_old_new in powerset_as_indicators(op.arity):
-        if vars_old_new == all_old:
+        # skip op(all G_old) *unless* we have been doing a MaxNew style
+        # generation, in which case G_old need not be closed under op.
+        if vars_old_new == all_old and MaxNew < 0:
           continue
         args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
         # we have to seek the arguments that gave us result... not a good soln...
