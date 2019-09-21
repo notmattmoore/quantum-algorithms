@@ -471,10 +471,19 @@ def rand_subalg(A, Ops, num_gen=-1, MaxNew=-1, Progress=True):  # {{{
     num_gen = randrange(1,len(A)+1)
 
   A_list = list(A)
-  G = [ [choice(A_list)] for _ in range(num_gen) ]  # subalg_gen expects vectors!
+  # subalg_gen expects vectors, so we will have to make elements vectors and
+  # then fix it later
+  G = [ [choice(A_list)] for _ in range(num_gen) ]
+  S = subalg_gen(G, Ops, MaxNew=MaxNew, Progress=Progress)
+
+  # replace length 1 vectors with elements
+  G_ret = [g for [g] in G]
+  S_ret = FancySet()
+  for [s] in S:
+    S_ret.add(s, addl=S.addl([s]))
 
   # return the relation as well as the generators
-  return subalg_gen(G, Ops, MaxNew=MaxNew, Progress=Progress), G
+  return S_ret, G_ret
 #----------------------------------------------------------------------------}}}
 def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
   if num_gen == -1:
