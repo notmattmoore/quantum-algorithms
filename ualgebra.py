@@ -430,7 +430,6 @@ def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
   return C_newer
 #----------------------------------------------------------------------------}}}
 def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
-
   A = FancySet()
   GeneratorsCong = FancySet(initial=Generators, addl=["Generator"]*len(Generators))
 
