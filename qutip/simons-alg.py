@@ -28,7 +28,6 @@ def gen_oracle_op(k, f, arity=2):
     ret = []
     for x in range(len(f)):
         for offset in range(len(f)):
-            #fx = bin_to_int(f[x])
             fx = f[x]
             x_ket = tensor([ basis(2, d) for d in int_to_bin(x,k) ])
             offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
@@ -58,8 +57,6 @@ def SimonsAlg(n,U):
     targ = post_oracle.ptrace([ i for i in range(n) ])
     targ = ht*targ
 
-    print(targ)
-
     return targ
 
 # ~~~ Testing ~~~
@@ -68,13 +65,10 @@ def SimonsAlg(n,U):
 
 n = 2
 f = gen_oracle(n, set([0,1]) )
-#print(f)
 
 # Programmatically generated operator
 op = gen_oracle_op(n,f)
-#for row in op:
-#    print(row)
 U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
 
 dm = SimonsAlg(n,U)
-#dm_to_hist(dm)
+dm_to_hist(dm)

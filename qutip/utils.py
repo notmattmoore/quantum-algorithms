@@ -44,4 +44,6 @@ def dm_to_hist(dm):
     plt.ylabel('Expectation value')
     plt.title('Probability Distribution')
     plt.bar(names, values)
+    axes = plt.gca()
+    axes.set_ylim([0.0,1.0])
     plt.show()
