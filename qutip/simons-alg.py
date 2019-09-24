@@ -27,12 +27,9 @@ def gen_oracle_op(k, f, arity=2):
     ket_as_list = lambda ket: ket.full().astype(int).flatten().tolist()
     ret = []
     for x in range(len(f)):
-        print('x',x)
         for offset in range(len(f)):
-            print('offset',offset)
             #fx = bin_to_int(f[x])
             fx = f[x]
-            print('fx', fx)
             x_ket = tensor([ basis(2, d) for d in int_to_bin(x,k) ])
             offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
             ket = tensor( x_ket, offset_ket )
@@ -51,16 +48,17 @@ def SimonsAlg(n,U):
 
     # Prepare the state psi
     psi = ht * zn
+    #print(psi.full())
 
     # Apply the oracle
     full_reg = tensor(psi, zn)
     post_oracle = U * full_reg
 
-    # Reduce the space to the register of interest
-    targ = post_oracle.ptrace([ i for i in range(n) ])
-
     # Return to the starting space
-    targ = ht * targ
+    targ = post_oracle.ptrace([ i for i in range(n) ])
+    targ = ht*targ
+
+    print(targ)
 
     return targ
 
@@ -74,9 +72,9 @@ f = gen_oracle(n, set([0,1]) )
 
 # Programmatically generated operator
 op = gen_oracle_op(n,f)
-for row in op:
-    print(row)
+#for row in op:
+#    print(row)
 U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
 
 dm = SimonsAlg(n,U)
-dm_to_hist(dm)
+#dm_to_hist(dm)
