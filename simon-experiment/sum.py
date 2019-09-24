@@ -25,12 +25,11 @@ def simon_sum(cong, a, b, verbose=False): # {{{
   return S
 #----------------------------------------------------------------------------}}}
 
+# operations {{{
 def meet(x,y):
-  # meet as the bit-wise product
-  return [x[i]*y[i] for i in range(len(x))]
+  return [min(x[i], y[i]) for i in range(len(x))]
 def join(x,y):
-  # join as the bit-wise truncated sum
-  return [max(x[i],y[i]) for i in range(len(x))]
+  return [max(x[i], y[i]) for i in range(len(x))]
 
 def meet_set(S):
   # take the meet of a set of elements
@@ -39,16 +38,30 @@ def meet_set(S):
     r = meet(r, s)
   return r
 
-Ops = []
-Ops.append(UA.Operation(meet, 2, "meet"))
-Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
+def maj01(*args):
+  args0_count = args.count(args[0])
+  if args0_count >= len(args) - 1:
+    return args[0]
+  elif args0_count == 1 and args.count(args[1]) >= len(args) - 1:
+    return args[1]
+  return args[0]
+def maj(*args):
+  return list( map(maj01, *args) )
+#----------------------------------------------------------------------------}}}
 
-n = 5
+Ops = []
+#Ops.append(UA.Operation(meet, 2, "meet"))
+#Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
+Ops.append(UA.Operation(maj, 3, "maj"))
+
+n = 4
 Dn = [list(a) for a in product([0,1],repeat=n)]   # {0,1}^n
 
 passes = True
 while passes:
   A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
+  #A = UA.FancySet( initial=Dn )
+  #A_gens = []
   Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=False)
   min_preimages = [meet_set(C) for C in UA.cong_classes(Theta, A)]
   stdout.write(str(round(len(min_preimages) / len(A), 2)) + " ")
