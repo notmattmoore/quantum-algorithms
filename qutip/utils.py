@@ -1,6 +1,7 @@
 # Useful functions for implementing QuTiP algorithms
 
 from qutip import *
+import matplotlib.pyplot as plt
 
 # An implementation of foldl (I think)
 # In: func, the function to apply; xs, the list to fold
@@ -32,3 +33,15 @@ def bin_to_int(x):
 def gen_bin_list(k, xs):
     return [ int_to_bin(x,k) for x in xs ]
 
+# Plots a density matrix as a histogram
+# In:   dm, a density matrix
+# Out:  nothing
+def dm_to_hist(dm):
+    names = [ str(x) for x in range(len(dm.diag())) ]
+    values = dm.diag()
+    plt.figure()
+    plt.xlabel('Basis vector')
+    plt.ylabel('Expectation value')
+    plt.title('Probability Distribution')
+    plt.bar(names, values)
+    plt.show()

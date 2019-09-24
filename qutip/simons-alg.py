@@ -1,6 +1,4 @@
 # Rough implementation of Simon's Algorithm using QuTiP
-# Created by: Taylor Walenczyk
-# Last Updated: 08/22/2019
 
 from qutip import *
 from itertools import *
@@ -16,8 +14,8 @@ import ualgebra as UA
 # Out: a function (array-form) that seperates cosets on the hidden subgroup
 #     (f(a)=f(b) iff a-b in D)
 def gen_oracle(k, D, c=0):
-    bin_c = int_to_bin(c,k)
-    return [ bin_c if int_to_bin(x, k) in D else int_to_bin(x, k) for x in range(2**k) ]
+    #bin_c = int_to_bin(c,k)
+    return [ c if x in D else x for x in range(2**k) ]
     # TODO improve ^ by minimizing "checks"
 
 # Generates an oracle operator for Simon's Algorithm (Note: assumes structure
@@ -26,14 +24,19 @@ def gen_oracle(k, D, c=0):
 #       if applicable
 # Out: a (2**k)x(2**k) unitary operator embedding the oracle function
 def gen_oracle_op(k, f, arity=2):
-    ret = [ [ 0 for _ in range(2**(k*arity)) ] for _ in range(2**(k*arity)) ]
+    ket_as_list = lambda ket: ket.full().astype(int).flatten().tolist()
+    ret = []
     for x in range(len(f)):
+        print('x',x)
         for offset in range(len(f)):
-            fx = bin_to_int(f[x])
+            print('offset',offset)
+            #fx = bin_to_int(f[x])
+            fx = f[x]
+            print('fx', fx)
             x_ket = tensor([ basis(2, d) for d in int_to_bin(x,k) ])
             offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
             ket = tensor( x_ket, offset_ket )
-            ret[x+offset] = ket.full().astype(int).flatten().tolist()
+            ret.append(ket_as_list(ket))
     return ret
 
 # TODO Implement measurement phase
@@ -42,38 +45,38 @@ def gen_oracle_op(k, f, arity=2):
 #       U, an oracle operator
 # Out: TBD
 def SimonsAlg(n,U):
-    # Prepare the state psi
+    # Useful structures
     zn = tensor([ basis(2, 0) for _ in range(n) ])
     ht = hadamard_transform(n)
+
+    # Prepare the state psi
     psi = ht * zn
 
-    # Prepare input registers for Phi
-    regs = tensor(psi, zn)
-
-    print(U)
-    print(regs)
-
     # Apply the oracle
-    full_state = U * regs
+    full_reg = tensor(psi, zn)
+    post_oracle = U * full_reg
 
     # Reduce the space to the register of interest
-    targ = full_state.ptrace([ i for i in range(n) ])
+    targ = post_oracle.ptrace([ i for i in range(n) ])
 
+    # Return to the starting space
+    targ = ht * targ
+
+    return targ
 
 # ~~~ Testing ~~~
 
 # Using the partial implementation of Simon's algorithm
 
 n = 2
-f = gen_oracle(n, [ list(product([[0],[1]], repeat=2)) ])
-print(f)
+f = gen_oracle(n, set([0,1]) )
+#print(f)
 
 # Programmatically generated operator
-U = Qobj( inpt=gen_oracle_op(n,f), dims=[[2]*2*n, [2]*2*n])
+op = gen_oracle_op(n,f)
+for row in op:
+    print(row)
+U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
 
-#print("Expected operator")
-#print(U1.data)
-#print("Generated operator")
-#print(Ua1.data)
-
-SimonsAlg(n,U)
+dm = SimonsAlg(n,U)
+dm_to_hist(dm)
