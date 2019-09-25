@@ -14,25 +14,29 @@ import ualgebra as UA
 # Out: a function (array-form) that seperates cosets on the hidden subgroup
 #     (f(a)=f(b) iff a-b in D)
 def gen_oracle(k, D, c=0):
-    #bin_c = int_to_bin(c,k)
     return [ c if x in D else x for x in range(2**k) ]
-    # TODO improve ^ by minimizing "checks"
+
+def ket_as_list(ket):
+    return ket.full().astype(int).flatten().tolist()
+
+def int_to_ket(x, n):
+    return tensor([ basis(2, d) for d in int_to_bin(x,n) ])
 
 # Generates an oracle operator for Simon's Algorithm (Note: assumes structure
 #     of oracle)
 # In: k, the size of the group; f, the oracle function; mult, multiplier for the
 #       if applicable
-# Out: a (2**k)x(2**k) unitary operator embedding the oracle function
-def gen_oracle_op(k, f, arity=2):
-    ket_as_list = lambda ket: ket.full().astype(int).flatten().tolist()
-    ret = []
+# Out: a (2**n)x(2**n) unitary operator embedding the oracle function
+def gen_oracle_op(n, f, arity=2):
+    ret = [ [] for _ in range(2**(2*n)) ]
     for x in range(len(f)):
-        for offset in range(len(f)):
+        for y in range(len(f)):
             fx = f[x]
-            x_ket = tensor([ basis(2, d) for d in int_to_bin(x,k) ])
-            offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
-            ket = tensor( x_ket, offset_ket )
-            ret.append(ket_as_list(ket))
+            x_ket = int_to_ket(x,n)
+            y_ket = int_to_ket((fx+y)%2**n, n)
+            ket = tensor( x_ket, y_ket )
+            for i,entry in enumerate(ket_as_list(ket)):
+                ret[i].append(entry)
     return ret
 
 # List of registers to preserve (0...n-1)
@@ -61,11 +65,32 @@ def SimonsAlg(n,U):
 
     # Return to the starting space
     targ = ptrace_wrt_regs(post_oracle, [0], n)
-    targ = ht*targ
+    targ = ht*targ*ht
 
     return targ
 
 # ~~~ Testing ~~~
+
+def verify_oracle(f, U, n):
+    cmp_kets = lambda x,y: ket_as_list(x) == ket_as_list(y)
+    for x in range(len(f)):
+        for y in range(len(f)):
+            # We expect U|xy>=|x,y oplus f(x)>
+            fx = f[x]
+            yop = (y + fx) % 2**n
+            expectation = tensor( int_to_ket(x,n), int_to_ket(yop,n) )
+
+            # Find the reality
+            inp = tensor( int_to_ket(x,n), int_to_ket(y,n) )
+            reality = U * inp
+
+            if not cmp_kets(expectation, reality):
+                print('x y', x,y)
+                print('expecation: val ket', yop, expectation)
+                print('reality: val ket', '-1', reality)
+                print('inp', inp)
+                return
+
 
 # Using the partial implementation of Simon's algorithm
 
@@ -75,6 +100,8 @@ f = gen_oracle(n, set([0,1]) )
 # Programmatically generated operator
 op = gen_oracle_op(n,f)
 U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
+#verify_oracle(f, U, n)
 
 dm = SimonsAlg(n,U)
-#dm_to_hist(dm)
+print(dm)
+dm_to_hist(dm)
