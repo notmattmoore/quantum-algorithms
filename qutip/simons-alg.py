@@ -35,6 +35,13 @@ def gen_oracle_op(k, f, arity=2):
             ret.append(ket_as_list(ket))
     return ret
 
+# List of registers to preserve (0...n-1)
+def ptrace_wrt_regs(obj, ris, n):
+    qubits = []
+    for i in ris:
+        qubits.extend( [i * n + j for j in range(n)] )
+    return obj.ptrace(qubits)
+
 # TODO Implement measurement phase
 # Simulates Simon's Algorithm
 # In: n, the digits for the binary representation of group elements;
@@ -47,14 +54,13 @@ def SimonsAlg(n,U):
 
     # Prepare the state psi
     psi = ht * zn
-    #print(psi.full())
 
     # Apply the oracle
     full_reg = tensor(psi, zn)
     post_oracle = U * full_reg
 
     # Return to the starting space
-    targ = post_oracle.ptrace([ i for i in range(n) ])
+    targ = ptrace_wrt_regs(post_oracle, [0], n)
     targ = ht*targ
 
     return targ
@@ -71,4 +77,4 @@ op = gen_oracle_op(n,f)
 U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
 
 dm = SimonsAlg(n,U)
-dm_to_hist(dm)
+#dm_to_hist(dm)
