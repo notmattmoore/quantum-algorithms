@@ -4,6 +4,7 @@ from itertools import *
 from random import *
 from sys import *
 import ualgebra as UA
+import post_ops as PO
 #----------------------------------------------------------------------------}}}1
 
 def simon_sum(cong, a, b, verbose=False): # {{{
@@ -47,7 +48,16 @@ def maj01(*args):
   return args[0]
 def maj(*args):
   return list( map(maj01, *args) )
-#----------------------------------------------------------------------------}}}
+
+def extend_ops_cwise(Ops):
+    new_Ops = []
+    for op in Ops:
+        temp_func = op.function
+        new_op = UA.Operation(lambda *args : list( map(temp_func, *args) ),
+                op.arity, "componenent-wise "+op.name)
+        new_Ops.append(new_op)
+    return new_Ops
+
 
 Ops = []
 #Ops.append(UA.Operation(meet, 2, "meet"))
