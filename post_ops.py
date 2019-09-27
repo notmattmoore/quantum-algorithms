@@ -161,7 +161,7 @@ def named_clone(name):  # {{{1
   if name == "P0":
     return [ op_join, op_plus ]
   if name == "P1":
-  return [ op_meet, op_implies ]
+    return [ op_meet, op_implies ]
   if name == "P":
     return [ op_q ]
   if name == "M":
@@ -261,7 +261,7 @@ def named_clone(name):  # {{{1
     return R
 
   if name[:4] == "MPT0":
-    if name[4:] != "inf"
+    if name[4:] != "inf":
       k = int(name[4:])
       if k < 2: raise RuntimeError("k must be >= 2.")
       if k == 2:
@@ -282,7 +282,7 @@ def named_clone(name):  # {{{1
     return R
 
   if name[:4] == "MPT1":
-    if name[4:] != "inf"
+    if name[4:] != "inf":
       k = int(name[4:])
       if k < 2: raise RuntimeError("k must be >= 2.")
       if k == 2:
