@@ -152,7 +152,7 @@ op_3plus = UA.Operation(plus_ternary, 3, "3plus")
 def named_clone(name):  # {{{1
   """
   Returns a basis for the named clone.
-  Subscripts are given inline: T1^10 = "T110".
+  Subscripts and superscripts are given inline, e.g. T1^10 = "T110".
   Infinity is indicated with "inf", e.g. "T0inf"
   """
 
