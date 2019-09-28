@@ -52,22 +52,27 @@ def ptrace_wrt_regs(obj, ris, n):
 #       U, an oracle operator
 # Out: TBD
 def SimonsAlg(n,U):
-    # Useful structures
-    zn = tensor([ basis(2, 0) for _ in range(n) ])
-    ht = hadamard_transform(n)
+    # registers and initial state
+    reg1 = tensor([ basis(2, 0) for _ in range(n) ])
+    reg2 = tensor([ basis(2, 0) for _ in range(n) ])
+    psi0 = tensor(reg1, reg2)
 
-    # Prepare the state psi
-    psi = ht * zn
+    # the first set of gates
+    In = tensor( [identity(2) for _ in range(n)] )
+    HI = tensor( hadamard_transform(n), In )
 
-    # Apply the oracle
-    full_reg = tensor(psi, zn)
-    post_oracle = U * full_reg
+    # do the Z2 inverse Fourier transform on the first register
+    psi1 = HI * psi0
 
-    # Return to the starting space
-    targ = ptrace_wrt_regs(post_oracle, [0], n)
-    targ = ht*targ*ht
+    # apply the oracle
+    psi2 = U * psi1
 
-    return targ
+    # do the Z2 Fourier transform (same as inverse for Z2) on the first register
+    psi3 = HI * psi2
+
+    # measure the first register and return the density matrix
+    rho = psi3.ptrace(list(range(n)))
+    return rho
 
 # ~~~ Testing ~~~
 
