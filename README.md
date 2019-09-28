@@ -33,7 +33,7 @@ missing or could be improved.
 
   > This is an appendix from [Quantum Walks and Search Algorithms by Renato
   > Portugal][Portugal book]. It gives a concise but sufficient presentation of
-  > the coordinate-free used in quantum computation.
+  > the coordinate-free linear algbera used in quantum computation.
 
 * [Algebras, Lattices, Varieties Volume I][MMT ALV vol1]
 
