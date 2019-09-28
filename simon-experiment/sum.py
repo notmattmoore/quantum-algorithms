@@ -64,7 +64,7 @@ while passes:
   #A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
   A, A_gens = UA.FancySet( initial=Dn ), []
   Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=False)
-  min_preimages = [meet_set(C) for C in UA.cong_classes(Theta, A)]
+  min_preimages = UA.FancySet( initial=[meet_set(C) for C in UA.cong_classes(Theta, A)] )
   stdout.write(str(len(min_preimages)) + " ")
   stdout.flush()
   for a,b in product(A,repeat=2):
