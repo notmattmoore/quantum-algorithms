@@ -299,7 +299,7 @@ def rand_clone(max_k): # {{{
     "T"    , "P0"    , "P1"    , "P"    , "M"   , "MP0"   , "MP1"   , "MP"   ,
     "MEET" , "MEETP0", "MEETP1", "MEETP", "JOIN", "JOINP0", "JOINP1", "JOINP",
     "D"    , "DP"    , "DM"   , "A"   , "AD"    , "AP0"   , "AP1"   , "AP"   ,
-    "U"    , "UD"    , "UM"   , "UP0" , "UP1"   , "F" 
+    "U"    , "UD"    , "UM"   , "UP0" , "UP1"   , "F"
     ] + [ "T0" + str(k)   for k in range(2,max_k+1) ] + [ "T0inf" ]   + \
         [ "PT0" + str(k)  for k in range(2,max_k+1) ] + [ "PT0inf" ]  + \
         [ "T1" + str(k)   for k in range(2,max_k+1) ] + [ "T1inf" ]   + \
