@@ -9,7 +9,7 @@ from itertools import *
 from random import choice, randrange
 from sys import *
 import cProfile, pickle, random, shelve, string
-from pathos.pools import _ProcessPool
+import pathos.multiprocessing as MP
 #---------------------------------------------------------------------------}}}1
 
 # data structures, etc
@@ -306,57 +306,6 @@ def powerset_as_indicators(size): # {{{
     I[index] = 1
   yield copy(I)
 #----------------------------------------------------------------------------}}}
-def single_closure_pathos(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  # {{{
-  # G_old is a set of elements. G_new has been computed by taking G_old and
-  # applying single functions from Ops to it. It should be disjoint from G_old.
-  # We return G_newer, which is the result of applying functions from Ops to
-  # inputs from G_old and G_new, with at least 1 element of G_new as input. It
-  # will be disjoint from G_old+G_new.
-
-  with _ProcessPool() as pool:
-    G_newer = FancySet()
-    op_total = len(Ops)
-    for op_count, op in enumerate(Ops):
-      args_total = (len(G_old)+len(G_new))**op.arity - len(G_old)**op.arity
-      args_count = 0
-      # We don't want to evaluate op(all G_old), so we do all combinations of
-      # elements from G_old and G_new, with at least 1 G_new always appearing.
-      # We do this by quantifying over all variable positions where a new
-      # element will appear.
-      all_old = [0]*op.arity
-      for vars_old_new in powerset_as_indicators(op.arity):
-        # skip op(all G_old) *unless* we have been doing a MaxNew style
-        # generation, in which case G_old need not be closed under op.
-        if vars_old_new == all_old and MaxNew < 0:
-          continue
-        args_all = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
-        # we have to seek the arguments that gave us result... not a good soln...
-        args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
-        prev_args_index = -1
-        for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
-          # if result is something new
-          print("result",result)
-          if not ( result in G_old or result in G_new or result in G_newer ):
-            args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
-            prev_args_index = args_index
-            G_newer.add(result, op.pprint(*args))
-            print("Updated G_newer", G_newer)
-            if Search != None and Search(result):
-              stdout.write( "\nFound:\n" + op.pprint(*args) + "\n" )
-          args_count += 1
-          if Progress and args_count % 10000 == 0:
-            stdout.write( "\roperation " + op.name \
-                + " " + str(op_count+1) + " / " + str(op_total) \
-                + ", argument " + str(args_count) + " / " + str(args_total) \
-                + " ~ " + str( round( args_count/args_total*100, 4 ) ) + "%" \
-                + ", new elements: " + str(len(G_newer)) + " "*2 )
-            stdout.flush()
-          if 0 < MaxNew <= len(G_newer):  # return if found the max number of new elements
-            return G_newer
-    if Progress:
-      stdout.write("  done.\n")
-    return G_newer
-#----------------------------------------------------------------------------}}}
 def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  # {{{
   # G_old is a set of elements. G_new has been computed by taking G_old and
   # applying single functions from Ops to it. It should be disjoint from G_old.
@@ -364,7 +313,7 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
   # inputs from G_old and G_new, with at least 1 element of G_new as input. It
   # will be disjoint from G_old+G_new.
 
-  with Pool() as pool:
+  with MP.ProcessPool() as pool:
     G_newer = FancySet()
     op_total = len(Ops)
     for op_count, op in enumerate(Ops):
@@ -384,7 +333,7 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
         # we have to seek the arguments that gave us result... not a good soln...
         args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
         prev_args_index = -1
-        for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
+        for args_index, result in enumerate(pool.imap(op, args_all)):
           # if result is something new
           if not ( result in G_old or result in G_new or result in G_newer ):
             args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
@@ -420,8 +369,7 @@ def subalg_gen(Generators, Ops, ExtraClosure=None, MaxNew=-1, MaxLevels=-1, Prog
       stdout.write( "Closure level " + str(closure_level) + ", " )
       stdout.write( "at " + str(len(G_old) + len(G_new)) + " elements:\n" )
       stdout.flush()
-    G_newer = single_closure_pathos(G_old, G_new, Ops, MaxNew=MaxNew, Progress=Progress, Search=Search)
-    print("G_newer", str(G_newer))
+    G_newer = single_closure(G_old, G_new, Ops, MaxNew=MaxNew, Progress=Progress, Search=Search)
     if ExtraClosure != None:
       G_extra = ExtraClosure(G_old, G_new, Ops, Search=Search)
       if Progress:

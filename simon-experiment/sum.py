@@ -64,34 +64,27 @@ Ops = []
 #Ops.append(UA.Operation(meet, 2, "meet"))
 #Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
 #Ops.append(UA.Operation(maj, 3, "maj"))
-Ops = PO.named_clone("DM")
 #Ops = PO.named_clone("MPT0inf")
+Ops = extend_ops_cwise(PO.named_clone("DM"))
 
 n = 4
 Dn = [list(a) for a in product([0,1],repeat=n)]   # {0,1}^n
 
 passes = True
-count = 0
-while passes and count < 100:
-  A, A_gens = UA.rand_subalg(Dn, Ops, Progress=True)
-  print("rand subalg\n\n\n\n", A)
+while passes:
+  A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
   #A = UA.FancySet( initial=Dn )
   #A_gens = []
-  Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=True)
+  Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=False)
   min_preimages = [meet_set(C) for C in UA.cong_classes(Theta, A)]
   stdout.write(str(round(len(min_preimages) / len(A), 2)) + " ")
   stdout.flush()
   print("A", str(A))
   for a,b in product(A,repeat=2):
-    stdout.write("\n"*12)
     S = simon_sum(Theta, a, b)
-    if (S != 0 and a == b in min_preimages): #or (S == 0 and a == b in min_preimages):
+    if (S != 0 and a == b in min_preimages) or (S == 0 and a == b in min_preimages):
       passes = False
-      stdout.write("\n"*12)
       break
-  count += 1
-print("passes", passes)
-print("count", count)
 
 print("A generators:")
 for g in A_gens:
@@ -108,6 +101,7 @@ for a,b in product(A, repeat=2):
     S = simon_sum(Theta, a, b, verbose=True)
     print("a b S:", a, b, S)
     break
-print("Diagonal Entries")
-for a in A:
-    print('a', simon_sum(Theta, a, a))
+
+#print("Diagonal Entries")
+#for a in A:
+#    print('a', simon_sum(Theta, a, a))
