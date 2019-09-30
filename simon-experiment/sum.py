@@ -71,7 +71,7 @@ n = 4
 Dn = [list(a) for a in product([0,1],repeat=n)]   # {0,1}^n
 
 passes = True
-while passes and count < 100:
+while passes:
   A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
   #A = UA.FancySet( initial=Dn )
   #A_gens = []
