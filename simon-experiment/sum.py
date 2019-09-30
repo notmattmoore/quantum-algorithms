@@ -71,7 +71,7 @@ n = 4
 Dn = [list(a) for a in product([0,1],repeat=n)]   # {0,1}^n
 
 passes = True
-while passes:
+while passes and count < 100:
   A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
   #A = UA.FancySet( initial=Dn )
   #A_gens = []
@@ -82,7 +82,7 @@ while passes:
   print("A", str(A))
   for a,b in product(A,repeat=2):
     S = simon_sum(Theta, a, b)
-    if (S != 0 and a == b in min_preimages) or (S == 0 and a == b in min_preimages):
+    if (S != 0 and a != b) or (S == 0 and a == b in min_preimages):
       passes = False
       break
 

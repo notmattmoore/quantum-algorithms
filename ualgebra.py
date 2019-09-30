@@ -333,7 +333,7 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
         # we have to seek the arguments that gave us result... not a good soln...
         args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
         prev_args_index = -1
-        for args_index, result in enumerate(pool.imap(op, args_all)):
+        for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
           # if result is something new
           if not ( result in G_old or result in G_new or result in G_newer ):
             args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
