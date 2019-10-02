@@ -1,10 +1,8 @@
-# Version: 2019-09-16
 # A library for doing computations on universal algebras
 
 # imports {{{1
-from copy import copy, deepcopy
 from IPython import embed
-from multiprocessing import Pool
+from copy import copy, deepcopy
 from itertools import *
 from random import choice, randrange
 from sys import *
@@ -259,7 +257,7 @@ class Operation: # {{{1
   # We can call O(input), where input is a list of vectors in the domain of the
   # function (to some power). For example, O([[1,2],[3,4],[5,6]]) represents input
   # to a 3-ary function of 2-ary vectors: [O(1,3,5), O(2,4,6)]. This is hackish,
-  # but is a workaround to pool.imap not supporting multiple iterables.
+  # but I can't think of a more natural way to do it.
 
   def __init__(self, function, arity, name):  # {{{
     self.function = function
@@ -268,9 +266,8 @@ class Operation: # {{{1
   #--------------------------------------------------------------------------}}}
   def __call__(self, args):  # {{{
     # Sometimes we will want to 'nest' operations, meaning that O.function is
-    # itself an operation. Due to the issue of pool.imap not supporting multiple
-    # iterables mentioned above, we will need to manually transpose the args
-    # list if this is the case.
+    # itself an operation. We will need to manually transpose the args list if
+    # this is the case.
     if type(self.function) != type(self): # not nested
       return list( map(self.function, *args) )
     else: # nested
@@ -340,7 +337,7 @@ def single_closure(G_old, G_new, Ops, MaxNew=-1, Progress=True, Search=None):  #
         # we have to seek the arguments that gave us result... not a good soln...
         args_all_seek = product( *[ [G_old, G_new][var] for var in vars_old_new ] )
         prev_args_index = -1
-        for args_index, result in enumerate(pool.imap(op, args_all, chunksize=1000)):
+        for args_index, result in enumerate(pool.imap(op, args_all)):
           # if result is something new
           if not ( result in G_old or result in G_new or result in G_newer ):
             args = next(islice(args_all_seek, args_index-prev_args_index-1, None))
