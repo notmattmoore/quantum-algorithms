@@ -13,8 +13,18 @@ import ualgebra as UA
 #     c, the common value for f(x) forall x in D
 # Out: a function (array-form) that seperates cosets on the hidden subgroup
 #     (f(a)=f(b) iff a-b in D)
-def gen_oracle(k, D, c=0):
-    return [ c if x in D else x for x in range(2**k) ]
+def gen_oracle(k, D):
+    c = 0
+    f = [ -1 for _ in range(2**k) ]
+    for x in range(2**k):
+        for y in range(2**k):
+            if x^y in D:
+                if x == y and f[x] == -1:
+                    f[x] = c
+                    c += 1
+                else:
+                    f[x] = f[y] = f[x] if x < y else f[y]
+    return f
 
 def ket_as_list(ket):
     return ket.full().astype(int).flatten().tolist()
@@ -95,18 +105,19 @@ def verify_oracle(f, U, n):
                 print('reality: val ket', '-1', reality)
                 print('inp', inp)
                 return
+    print('Oracle verified')
 
 
 # Using the partial implementation of Simon's algorithm
 
-n = 2
-f = gen_oracle(n, set([0,1]) )
+n = 3
+f = gen_oracle(n, set([0,2]) )
 
 # Programmatically generated operator
 op = gen_oracle_op(n,f)
 U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
-#verify_oracle(f, U, n)
+verify_oracle(f, U, n)
 
 dm = SimonsAlg(n,U)
 print(dm)
-dm_to_hist(dm)
+#dm_to_hist(dm)
