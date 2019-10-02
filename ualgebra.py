@@ -259,7 +259,7 @@ class Operation: # {{{1
   # We can call O(input), where input is a list of vectors in the domain of the
   # function (to some power). For example, O([[1,2],[3,4],[5,6]]) represents input
   # to a 3-ary function of 2-ary vectors: [O(1,3,5), O(2,4,6)]. This is hackish,
-  # but is a workaround to pool.map not supporting multiple iterables.
+  # but is a workaround to pool.imap not supporting multiple iterables.
 
   def __init__(self, function, arity, name):  # {{{
     self.function = function
@@ -267,7 +267,14 @@ class Operation: # {{{1
     self.name = name
   #--------------------------------------------------------------------------}}}
   def __call__(self, args):  # {{{
-    return list( map(self.function, *args) )
+    # Sometimes we will want to 'nest' operations, meaning that O.function is
+    # itself an operation. Due to the issue of pool.imap not supporting multiple
+    # iterables mentioned above, we will need to manually transpose the args
+    # list if this is the case.
+    if type(self.function) != type(self): # not nested
+      return list( map(self.function, *args) )
+    else: # nested
+      return list( map(self.function, map(list, zip(*args))) )
   #--------------------------------------------------------------------------}}}
   def pprint(self, *args):  # {{{
     result = self(args)
@@ -431,10 +438,14 @@ def transitive_closure_layer(C, C_new, A, Search=False):  # {{{
   return C_newer
 #----------------------------------------------------------------------------}}}
 def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial=None, MaxLevels=-1):  # {{{
+  # Generators are a subset of A^2. They *must* contain a representative of each
+  # element of A. Ops are operations of A *not* of A^2. 
+
   A = FancySet()
   GeneratorsCong = FancySet(initial=Generators, addl=["Generator"]*len(Generators))
 
-  # Make sure that Generators contains the diagonal and is symmetric
+  # Make sure that Generators contains the diagonal and is symmetric, and figure
+  # out what the set of the underlying algebra is.
   for [a,b] in Generators:
     GeneratorsCong.add([b,a])
     GeneratorsCong.add([a,a])
@@ -443,13 +454,17 @@ def cong_gen(Generators, Ops, MaxNew=-1, Progress=True, Search=None, SavePartial
     A.add(b)
 
   # subalg_gen expects the ExtraClosure function to take certain arguments, so
-  # we make the function we want to send it look like that
+  # we wrap the transitive_closure_layer() function
   def transitive_closure_wrapper(C, C_new, Ops, A=A, Search=Search):
     return transitive_closure_layer(C, C_new, A, Search=Search)
 
-  return subalg_gen(GeneratorsCong, Ops, MaxNew=MaxNew, Progress=Progress, \
-      Search=Search, ExtraClosure=transitive_closure_wrapper, \
-      SavePartial=SavePartial, MaxLevels=MaxLevels)
+  # Ops are operations of A, not of A^2, so we need to convert them to
+  # operations of A^2
+  Ops_square = [ Operation(op, op.arity, op.name) for op in Ops ]
+
+  return subalg_gen( GeneratorsCong, Ops_square, ExtraClosure=transitive_closure_wrapper, \
+      MaxNew=MaxNew, Progress=Progress, Search=Search, SavePartial=SavePartial, \
+      MaxLevels=MaxLevels )
 #----------------------------------------------------------------------------}}}
 def cong_classes(C, A): # {{{
   # output the congruence classes of C
@@ -470,20 +485,18 @@ def rand_subalg(A, Ops, num_gen=-1, MaxNew=-1, Progress=True):  # {{{
   if num_gen == -1:
     num_gen = randrange(1,len(A)+1)
 
+  # subalg_gen expects to generate vectors in a power of A, so we need to
+  # present the generators like this, and then unwrap them once we are finished.
+  # The same goes for the operations.
   A_list = list(A)
-  # subalg_gen expects vectors, so we will have to make elements vectors and
-  # then fix it later
-  G = [ [choice(A_list)] for _ in range(num_gen) ]
-  S = subalg_gen(G, Ops, MaxNew=MaxNew, Progress=Progress)
-
-  # replace length 1 vectors with elements
-  G_ret = [g for [g] in G]
-  S_ret = FancySet()
-  for [s] in S:
-    S_ret.add(s, addl=S.addl([s]))
+  Ops_vect = [ Operation(op, op.arity, op.name) for op in Ops ]
+  G_vect = [ [choice(A_list)] for _ in range(num_gen) ]
+  S_vect = subalg_gen(G_vect, Ops_vect, MaxNew=MaxNew, Progress=Progress)
+  G = [ g for [g] in G_vect ]
+  S = FancySet( initial=[ s for [s] in S_vect ], addl = [ S_vect.addl(s) for s in S_vect ] )
 
   # return the relation as well as the generators
-  return S_ret, G_ret
+  return S, G
 #----------------------------------------------------------------------------}}}
 def rand_cong(A, Ops, num_gen=-1, MaxNew=-1, Progress=False): # {{{
   if num_gen == -1:
