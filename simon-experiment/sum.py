@@ -13,7 +13,6 @@ def simon_sum(cong, a, b, verbose=False): # {{{
 
   S = 0
   for [s, t] in cong:
-    print("s t", s,t)
     S += (-1) ** (exp(s,t) % 2)
 
   if verbose:
@@ -82,8 +81,9 @@ while passes:
   min_preimages = UA.FancySet( initial=[meet_set(C) for C in UA.cong_classes(Theta, A)] )
   stdout.write(str(len(min_preimages)) + " ")
   stdout.flush()
-  print("A", str(A))
-  for a,b in product(A,repeat=2):
+  #for a,b in product(A,repeat=2):
+  for a in A:
+    b = a
     S = simon_sum(Theta, a, b)
     if (S != 0 and not (a == b in min_preimages)) or (S == 0 and a == b in min_preimages):
       passes = False
