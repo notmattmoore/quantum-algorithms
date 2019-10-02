@@ -85,7 +85,7 @@ while passes:
   print("A", str(A))
   for a,b in product(A,repeat=2):
     S = simon_sum(Theta, a, b)
-    if (S != 0 and a != b) or (S == 0 and a == b in min_preimages):
+    if (S != 0 and not (a == b in min_preimages)) or (S == 0 and a == b in min_preimages):
       passes = False
       break
 
