@@ -37,7 +37,7 @@ def meet_set(S):
   r = [ min([ S[i][j] for i in range(len(S)) ]) for j in range(len(S[0])) ]
   return r
 
-def nu(*args):
+def NU(*args):
   args0_count = args.count(args[0])
   if args0_count >= len(args) - 1:
     return args[0]
@@ -45,10 +45,10 @@ def nu(*args):
     return args[1]
   return args[0]
 def maj(*args):
-  return list( map(nu, *args) )
+  return list( map(NU, *args) )
 #----------------------------------------------------------------------------}}}
 
-#Ops = []
+Ops = []
 #Ops.append(UA.Operation(meet, 2, "meet"))
 #Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
 #Ops.append(UA.Operation(maj, 3, "maj"))
