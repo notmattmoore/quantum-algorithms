@@ -1,6 +1,4 @@
 # Rough implementation of Simon's Algorithm using QuTiP
-# Created by: Taylor Walenczyk
-# Last Updated: 08/22/2019
 
 from qutip import *
 from itertools import *
@@ -15,26 +13,48 @@ import ualgebra as UA
 #     c, the common value for f(x) forall x in D
 # Out: a function (array-form) that seperates cosets on the hidden subgroup
 #     (f(a)=f(b) iff a-b in D)
-def gen_oracle(k, D, c=0):
-    bin_c = int_to_bin(c,k)
-    return [ bin_c if int_to_bin(x, k) in D else int_to_bin(x, k) for x in range(2**k) ]
-    # TODO improve ^ by minimizing "checks"
+def gen_oracle(k, D):
+    c = 0
+    f = [ -1 for _ in range(2**k) ]
+    for x in range(2**k):
+        for y in range(2**k):
+            if x^y in D:
+                if x == y and f[x] == -1:
+                    f[x] = c
+                    c += 1
+                else:
+                    f[x] = f[y] = f[x] if x < y else f[y]
+    return f
+
+def ket_as_list(ket):
+    return ket.full().astype(int).flatten().tolist()
+
+def int_to_ket(x, n):
+    return tensor([ basis(2, d) for d in int_to_bin(x,n) ])
 
 # Generates an oracle operator for Simon's Algorithm (Note: assumes structure
 #     of oracle)
 # In: k, the size of the group; f, the oracle function; mult, multiplier for the
 #       if applicable
-# Out: a (2**k)x(2**k) unitary operator embedding the oracle function
-def gen_oracle_op(k, f, arity=2):
-    ret = [ [ 0 for _ in range(2**(k*arity)) ] for _ in range(2**(k*arity)) ]
+# Out: a (2**n)x(2**n) unitary operator embedding the oracle function
+def gen_oracle_op(n, f, arity=2):
+    ret = [ [] for _ in range(2**(2*n)) ]
     for x in range(len(f)):
-        for offset in range(len(f)):
-            fx = bin_to_int(f[x])
-            x_ket = tensor([ basis(2, d) for d in int_to_bin(x,k) ])
-            offset_ket = tensor([ basis(2, d) for d in int_to_bin((fx+offset)%2**k, k) ])
-            ket = tensor( x_ket, offset_ket )
-            ret[x+offset] = ket.full().astype(int).flatten().tolist()
+        for y in range(len(f)):
+            fx = f[x]
+            x_ket = int_to_ket(x,n)
+            y_ket = int_to_ket((fx+y)%2**n, n)
+            ket = tensor( x_ket, y_ket )
+            for i,entry in enumerate(ket_as_list(ket)):
+                ret[i].append(entry)
     return ret
+
+# List of registers to preserve (0...n-1)
+def ptrace_wrt_regs(obj, ris, n):
+    qubits = []
+    for i in ris:
+        qubits.extend( [i * n + j for j in range(n)] )
+    return obj.ptrace(qubits)
 
 # TODO Implement measurement phase
 # Simulates Simon's Algorithm
@@ -42,38 +62,62 @@ def gen_oracle_op(k, f, arity=2):
 #       U, an oracle operator
 # Out: TBD
 def SimonsAlg(n,U):
-    # Prepare the state psi
-    zn = tensor([ basis(2, 0) for _ in range(n) ])
-    ht = hadamard_transform(n)
-    psi = ht * zn
+    # registers and initial state
+    reg1 = tensor([ basis(2, 0) for _ in range(n) ])
+    reg2 = tensor([ basis(2, 0) for _ in range(n) ])
+    psi0 = tensor(reg1, reg2)
 
-    # Prepare input registers for Phi
-    regs = tensor(psi, zn)
+    # the first set of gates
+    In = tensor( [identity(2) for _ in range(n)] )
+    HI = tensor( hadamard_transform(n), In )
 
-    print(U)
-    print(regs)
+    # do the Z2 inverse Fourier transform on the first register
+    psi1 = HI * psi0
 
-    # Apply the oracle
-    full_state = U * regs
+    # apply the oracle
+    psi2 = U * psi1
 
-    # Reduce the space to the register of interest
-    targ = full_state.ptrace([ i for i in range(n) ])
+    # do the Z2 Fourier transform (same as inverse for Z2) on the first register
+    psi3 = HI * psi2
 
+    # measure the first register and return the density matrix
+    rho = psi3.ptrace(list(range(n)))
+    return rho
 
 # ~~~ Testing ~~~
 
+def verify_oracle(f, U, n):
+    cmp_kets = lambda x,y: ket_as_list(x) == ket_as_list(y)
+    for x in range(len(f)):
+        for y in range(len(f)):
+            # We expect U|xy>=|x,y oplus f(x)>
+            fx = f[x]
+            yop = (y + fx) % 2**n
+            expectation = tensor( int_to_ket(x,n), int_to_ket(yop,n) )
+
+            # Find the reality
+            inp = tensor( int_to_ket(x,n), int_to_ket(y,n) )
+            reality = U * inp
+
+            if not cmp_kets(expectation, reality):
+                print('x y', x,y)
+                print('expecation: val ket', yop, expectation)
+                print('reality: val ket', '-1', reality)
+                print('inp', inp)
+                return
+    print('Oracle verified')
+
+
 # Using the partial implementation of Simon's algorithm
 
-n = 2
-f = gen_oracle(n, [ list(product([[0],[1]], repeat=2)) ])
-print(f)
+n = 3
+f = gen_oracle(n, set([0,2]) )
 
 # Programmatically generated operator
-U = Qobj( inpt=gen_oracle_op(n,f), dims=[[2]*2*n, [2]*2*n])
+op = gen_oracle_op(n,f)
+U = Qobj( inpt=op, dims=[[2]*2*n, [2]*2*n])
+verify_oracle(f, U, n)
 
-#print("Expected operator")
-#print(U1.data)
-#print("Generated operator")
-#print(Ua1.data)
-
-SimonsAlg(n,U)
+dm = SimonsAlg(n,U)
+print(dm)
+#dm_to_hist(dm)

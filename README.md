@@ -29,6 +29,12 @@ missing or could be improved.
   > more details than some other books, but sometimes details can be
   > distracting.
 
+* [Linear Algebra for Quantum Computation](reference-texts/Portugal%20-%20Linear%20Algebra%20for%20Quantum%20Computation%20(Appendix).pdf)
+
+  > This is an appendix from [Quantum Walks and Search Algorithms by Renato
+  > Portugal][Portugal book]. It gives a concise but sufficient presentation of
+  > the coordinate-free linear algbera used in quantum computation.
+
 * [Algebras, Lattices, Varieties Volume I][MMT ALV vol1]
 
   > A good introduction to universal algebra concepts, written in a very
@@ -44,6 +50,8 @@ missing or could be improved.
 ## Research Papers
 
 
-[Nielsen Chuang book]: http://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
+
 [Kitaev Shen Vyalyi book]: http://www.ams.org/books/gsm/047/
 [MMT ALV vol1]: http://people.math.sc.edu/mcnulty/alglatvar/alvi.pdf
+[Nielsen Chuang book]: http://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
+[Portugal book]: http://www.springer.com/us/book/9781461463351

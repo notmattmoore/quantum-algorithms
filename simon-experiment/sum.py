@@ -28,18 +28,16 @@ def simon_sum(cong, a, b, verbose=False): # {{{
 
 # operations {{{
 def meet(x,y):
-  return [min(x[i], y[i]) for i in range(len(x))]
+  return min(x,y)
 def join(x,y):
-  return [max(x[i], y[i]) for i in range(len(x))]
+  return max(x,y)
 
 def meet_set(S):
   # take the meet of a set of elements
-  r = S[0]
-  for s in S[1:]:
-    r = meet(r, s)
+  r = [ min([ S[i][j] for i in range(len(S)) ]) for j in range(len(S[0])) ]
   return r
 
-def maj01(*args):
+def NU(*args):
   args0_count = args.count(args[0])
   if args0_count >= len(args) - 1:
     return args[0]
@@ -47,17 +45,8 @@ def maj01(*args):
     return args[1]
   return args[0]
 def maj(*args):
-  return list( map(maj01, *args) )
-
-def extend_ops_cwise(Ops):
-    new_Ops = []
-    for op in Ops:
-        temp_func = op.function
-        new_op = UA.Operation(lambda *args : list( map(temp_func, *args) ),
-                op.arity, "componenent-wise "+op.name)
-        new_Ops.append(new_op)
-    return new_Ops
-
+  return list( map(NU, *args) )
+#----------------------------------------------------------------------------}}}
 
 Ops = []
 #Ops.append(UA.Operation(meet, 2, "meet"))
@@ -122,16 +111,14 @@ while passes:
   #A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
   A, A_gens = UA.FancySet( initial=Dn ), []
   Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=False)
-  min_preimages = [meet_set(C) for C in UA.cong_classes(Theta, A)]
-  stdout.write(str(round(len(min_preimages) / len(A), 2)) + " ")
+  min_preimages = UA.FancySet( initial=[meet_set(C) for C in UA.cong_classes(Theta, A)] )
+  stdout.write(str(len(min_preimages)) + " ")
   stdout.flush()
   #for a,b in product(A,repeat=2):
   for a in A:
     b = a
     S = simon_sum(Theta, a, b)
-    if (S != 0 and (a == b in min_preimages)) or (a not in min_preimages):
-      passes = True
-    else:
+    if (S != 0 and not (a == b in min_preimages)) or (S == 0 and a == b in min_preimages):
       passes = False
       break
 
