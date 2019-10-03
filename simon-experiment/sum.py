@@ -13,7 +13,6 @@ def simon_sum(cong, a, b, verbose=False): # {{{
 
   S = 0
   for [s, t] in cong:
-    print("s t", s,t)
     S += (-1) ** (exp(s,t) % 2)
 
   if verbose:
@@ -64,25 +63,75 @@ Ops = []
 #Ops.append(UA.Operation(meet, 2, "meet"))
 #Ops.append(UA.Operation(join, 2, "join")) # comment out for semilattices
 #Ops.append(UA.Operation(maj, 3, "maj"))
-#Ops = PO.named_clone("MPT0inf")
-Ops = extend_ops_cwise(PO.named_clone("DM"))
 
-n = 4
+# PASSING
+#Ops = extend_ops_cwise(PO.named_clone("DM"))
+#Ops = extend_ops_cwise(PO.named_clone("MP"))
+#Ops = extend_ops_cwise(PO.named_clone("AP0"))
+#Ops = extend_ops_cwise(PO.named_clone("MPT0inf"))
+
+# FAILING
+
+# INDETERMINATE
+#Ops = extend_ops_cwise(PO.named_clone("T"))
+#Ops = extend_ops_cwise(PO.named_clone("P0"))
+#Ops = extend_ops_cwise(PO.named_clone("P1"))
+#Ops = extend_ops_cwise(PO.named_clone("P"))
+#Ops = extend_ops_cwise(PO.named_clone("T0inf"))
+#Ops = extend_ops_cwise(PO.named_clone("PT0inf"))
+#Ops = extend_ops_cwise(PO.named_clone("T1inf"))
+#Ops = extend_ops_cwise(PO.named_clone("PT1inf"))
+#Ops = extend_ops_cwise(PO.named_clone("M"))
+#Ops = extend_ops_cwise(PO.named_clone("MP0"))
+#Ops = extend_ops_cwise(PO.named_clone("MP1"))
+#Ops = extend_ops_cwise(PO.named_clone("MT0inf"))
+#Ops = extend_ops_cwise(PO.named_clone("MPT02"))
+#Ops = extend_ops_cwise(PO.named_clone("MT1inf"))
+#Ops = extend_ops_cwise(PO.named_clone("MPT12"))
+Ops = extend_ops_cwise(PO.named_clone("MPT1inf"))
+#Ops = extend_ops_cwise(PO.named_clone("MEET"))
+#Ops = extend_ops_cwise(PO.named_clone("MEETP0"))
+#Ops = extend_ops_cwise(PO.named_clone("MEETP1"))
+#Ops = extend_ops_cwise(PO.named_clone("MEETP"))
+#Ops = extend_ops_cwise(PO.named_clone("JOIN"))
+#Ops = extend_ops_cwise(PO.named_clone("JOINP0"))
+#Ops = extend_ops_cwise(PO.named_clone("JOINP1"))
+#Ops = extend_ops_cwise(PO.named_clone("JOINP"))
+#Ops = extend_ops_cwise(PO.named_clone("D"))
+#Ops = extend_ops_cwise(PO.named_clone("DP"))
+#Ops = extend_ops_cwise(PO.named_clone("A"))
+#Ops = extend_ops_cwise(PO.named_clone("AD"))
+#Ops = extend_ops_cwise(PO.named_clone("AP1"))
+#Ops = extend_ops_cwise(PO.named_clone("AP"))
+#Ops = extend_ops_cwise(PO.named_clone("U"))
+#Ops = extend_ops_cwise(PO.named_clone("UD"))
+#Ops = extend_ops_cwise(PO.named_clone("UM"))
+#Ops = extend_ops_cwise(PO.named_clone("UP0"))
+#Ops = extend_ops_cwise(PO.named_clone("UP1"))
+#Ops = extend_ops_cwise(PO.named_clone("F"))
+
+for op in Ops:
+    print("Name:", op.name)
+
+n = 3
 Dn = [list(a) for a in product([0,1],repeat=n)]   # {0,1}^n
+min_preimages = []
 
 passes = True
 while passes:
-  A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
-  #A = UA.FancySet( initial=Dn )
-  #A_gens = []
+  #A, A_gens = UA.rand_subalg(Dn, Ops, Progress=False)
+  A, A_gens = UA.FancySet( initial=Dn ), []
   Theta, Theta_gens = UA.rand_cong(A, Ops, num_gen=randrange(n), Progress=False)
   min_preimages = [meet_set(C) for C in UA.cong_classes(Theta, A)]
   stdout.write(str(round(len(min_preimages) / len(A), 2)) + " ")
   stdout.flush()
-  print("A", str(A))
-  for a,b in product(A,repeat=2):
+  #for a,b in product(A,repeat=2):
+  for a in A:
+    b = a
     S = simon_sum(Theta, a, b)
-    if (S != 0 and a != b) or (S == 0 and a == b in min_preimages):
+    if (S != 0 and (a == b in min_preimages)) or (a not in min_preimages):
+      passes = True
+    else:
       passes = False
       break
 
@@ -95,9 +144,13 @@ for g in Theta_gens:
 print("Congruence classes:")
 for C in UA.cong_classes(Theta, A):
   print("  ", C)
-for a,b in product(A, repeat=2):
+#for a,b in product(A, repeat=2):
+for a in A:
+  b = a
   S = simon_sum(Theta, a, b)
-  if (S != 0 and a != b) or (S == 0 and a == b in min_preimages):
+  if S != 0 and (a == b in min_preimages) or (a not in min_preimages):
+    pass
+  else:
     S = simon_sum(Theta, a, b, verbose=True)
     print("a b S:", a, b, S)
     break
