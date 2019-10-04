@@ -26,35 +26,6 @@ def gen_oracle(k, D):
                     f[x] = f[y] = f[x] if x < y else f[y]
     return f
 
-def ket_as_list(ket):
-    return ket.full().astype(int).flatten().tolist()
-
-def int_to_ket(x, n):
-    return tensor([ basis(2, d) for d in int_to_bin(x,n) ])
-
-# Generates an oracle operator for Simon's Algorithm (Note: assumes structure
-#     of oracle)
-# In: k, the size of the group; f, the oracle function; mult, multiplier for the
-#       if applicable
-# Out: a (2**n)x(2**n) unitary operator embedding the oracle function
-def gen_oracle_op(n, f, arity=2):
-    ret = [ [] for _ in range(2**(2*n)) ]
-    for x in range(len(f)):
-        for y in range(len(f)):
-            fx = f[x]
-            x_ket = int_to_ket(x,n)
-            y_ket = int_to_ket((fx+y)%2**n, n)
-            ket = tensor( x_ket, y_ket )
-            for i,entry in enumerate(ket_as_list(ket)):
-                ret[i].append(entry)
-    return ret
-
-# List of registers to preserve (0...n-1)
-def ptrace_wrt_regs(obj, ris, n):
-    qubits = []
-    for i in ris:
-        qubits.extend( [i * n + j for j in range(n)] )
-    return obj.ptrace(qubits)
 
 # TODO Implement measurement phase
 # Simulates Simon's Algorithm
@@ -110,8 +81,8 @@ def verify_oracle(f, U, n):
 
 # Using the partial implementation of Simon's algorithm
 
-n = 3
-f = gen_oracle(n, set([0,2]) )
+n = 4
+f = gen_oracle(n, set([0,13]) )
 
 # Programmatically generated operator
 op = gen_oracle_op(n,f)
@@ -120,4 +91,4 @@ verify_oracle(f, U, n)
 
 dm = SimonsAlg(n,U)
 print(dm)
-#dm_to_hist(dm)
+dm_to_hist(dm)
