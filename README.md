@@ -49,7 +49,12 @@ missing or could be improved.
 
 ## Research Papers
 
+* [The quantum query complexity of the hidden subgroup problem is polynomial](https://arxiv.org/abs/quant-ph/0401083)
 
+  > By Ettinger, Høyer, and Knill, 2004. Uses O(n^2+lg(e)) oracle queries to
+  > obtain an error probability of 1-1/e. The circuit is brute force with
+  > respect to the number of subgroups, which is in O(2^(n^2)), so the circuit
+  > is exponential in size.
 
 [Kitaev Shen Vyalyi book]: http://www.ams.org/books/gsm/047/
 [MMT ALV vol1]: http://people.math.sc.edu/mcnulty/alglatvar/alvi.pdf
