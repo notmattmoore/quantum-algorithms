@@ -311,3 +311,12 @@ def rand_clone(max_k): # {{{
   name = choice(Names)
   return name, named_clone(name)
 #----------------------------------------------------------------------------}}}
+def extend_ops_cwise(Ops):
+    new_Ops = []
+    for op in Ops:
+        temp_func = op.function
+        new_op = UA.Operation(lambda *args : list( map(temp_func, *args) ),
+                op.arity, "componenent-wise "+op.name)
+        new_Ops.append(new_op)
+    return new_Ops
+
