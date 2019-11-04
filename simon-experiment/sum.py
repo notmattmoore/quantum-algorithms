@@ -88,7 +88,7 @@ for C in UA.cong_classes(Theta, A):
   print("  ", C)
 for a,b in product(A, repeat=2):
   S = simon_sum(Theta, a, b)
-  if (S != 0 and a != b) or (S == 0 and a == b in min_preimages):
+  if (S != 0 and not (a == b in min_preimages)) or (S == 0 and a == b in min_preimages):
     S = simon_sum(Theta, a, b, verbose=True)
     print("a b S:", a, b, S)
     break
