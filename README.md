@@ -56,6 +56,13 @@ missing or could be improved.
   > respect to the number of subgroups, which is in O(2^(n^2)), so the circuit
   > is exponential in size.
 
+* [Nested quantum search and NP-hard problems](https://arxiv.org/abs/quant-ph/9806078)
+
+  > By Cerf, Grover, Williams, 2000. Presents a multistage version of Grover's
+  > algorithm for problems using a 'search tree' approach. This has applications
+  > to general CSP problems, but doesn't any of the algebraic techniques
+  > developed over the past decade.
+
 [Kitaev Shen Vyalyi book]: http://www.ams.org/books/gsm/047/
 [MMT ALV vol1]: http://people.math.sc.edu/mcnulty/alglatvar/alvi.pdf
 [Nielsen Chuang book]: http://en.wikipedia.org/wiki/Quantum_Computation_and_Quantum_Information
